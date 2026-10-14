@@ -5,7 +5,7 @@ export default function NotFoundPage() {
     <main className="not-found">
       <p className="eyebrow">WRONG TURN</p>
       <h1>This page isn’t on the lineup.</h1>
-      <Link className="button button--dark" to="/">Back to events</Link>
+      <Link className="button button--dark" to="/events">Back to events</Link>
     </main>
   );
 }

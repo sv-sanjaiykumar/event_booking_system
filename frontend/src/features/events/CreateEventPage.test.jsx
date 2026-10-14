@@ -79,4 +79,23 @@ describe("creator event creation page", () => {
     );
     expect(createEvent).not.toHaveBeenCalled();
   });
+
+  it("rejects event names that start with a number or contain special characters", async () => {
+    renderCreateEventPage();
+    fireEvent.change(screen.getByLabelText("Event name"), {
+      target: { value: "2026 Festival!" },
+    });
+    fireEvent.change(screen.getByLabelText("Event date and time"), {
+      target: { value: "2030-12-01T18:30" },
+    });
+    fireEvent.change(screen.getByLabelText("Total seat capacity"), {
+      target: { value: "25" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Publish event" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Event name must start with a letter and contain only letters, numbers, and spaces.",
+    );
+    expect(createEvent).not.toHaveBeenCalled();
+  });
 });

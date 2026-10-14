@@ -24,7 +24,8 @@ function DashboardRedirect() {
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<DiscoveryPage />} />
+      <Route path="/" element={<Navigate to="/events" replace />} />
+      <Route path="/events" element={<DiscoveryPage />} />
       <Route path="/events/:eventId" element={<EventDetailsPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />

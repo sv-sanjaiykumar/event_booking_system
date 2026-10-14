@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import AppRoutes from "../../app/AppRoutes.jsx";
@@ -12,6 +12,7 @@ import {
 } from "./authApi.js";
 import {
   fetchAllCreatorEvents,
+  fetchEvent,
   fetchEventBookings,
   fetchEvents,
   fetchMyBookings,
@@ -58,9 +59,15 @@ function renderApp(initialEntry = "/") {
     <MemoryRouter initialEntries={[initialEntry]}>
       <AuthProvider>
         <AppRoutes />
+        <CurrentPath />
       </AuthProvider>
     </MemoryRouter>,
   );
+}
+
+function CurrentPath() {
+  const { pathname } = useLocation();
+  return <div data-testid="current-path">{pathname}</div>;
 }
 
 describe("authentication and role routing", () => {
@@ -77,6 +84,36 @@ describe("authentication and role routing", () => {
     fetchEventBookings.mockResolvedValue([]);
     fetchEvents.mockResolvedValue([]);
     fetchMyBookings.mockResolvedValue([]);
+  });
+
+  it("shows event discovery at /events", async () => {
+    renderApp("/events");
+
+    expect(await screen.findByText("THE LINEUP")).toBeInTheDocument();
+    expect(fetchEvents).toHaveBeenCalled();
+  });
+
+  it("redirects the root URL to /events", async () => {
+    renderApp("/");
+
+    expect(await screen.findByTestId("current-path")).toHaveTextContent("/events");
+    expect(await screen.findByText("THE LINEUP")).toBeInTheDocument();
+  });
+
+  it("opens the event detail page for /events/:eventId", async () => {
+    fetchEvent.mockResolvedValueOnce({
+      id: 42,
+      name: "A specific event",
+      description: "Event details.",
+      total_seats: 10,
+      available_seats: 4,
+      date: "2030-11-20T18:00:00Z",
+      status: "published",
+    });
+    renderApp("/events/42");
+
+    expect(await screen.findByRole("heading", { name: "A specific event" })).toBeInTheDocument();
+    expect(fetchEvent).toHaveBeenCalledWith("42");
   });
 
   it("redirects unauthenticated visitors from a protected route to login", async () => {

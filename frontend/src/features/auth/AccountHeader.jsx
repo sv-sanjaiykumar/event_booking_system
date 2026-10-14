@@ -14,7 +14,7 @@ export default function AccountHeader() {
     } catch {
       // Local session state is cleared even when the API is unreachable.
     } finally {
-      navigate("/", { replace: true });
+      navigate("/events", { replace: true });
     }
   }
 
@@ -23,7 +23,7 @@ export default function AccountHeader() {
       <div className="topbar__inner">
         <BrandMark />
         <nav className="topbar__nav" aria-label="Account navigation">
-          <Link className="topbar__link" to="/">Discover</Link>
+          <Link className="topbar__link" to="/events">Discover</Link>
           {user && (
             <Link className="topbar__link" to={dashboardForRole(user.role)}>
               My dashboard

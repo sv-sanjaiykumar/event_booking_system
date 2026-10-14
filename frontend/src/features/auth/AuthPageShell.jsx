@@ -7,7 +7,7 @@ export default function AuthPageShell({ eyebrow, title, description, children })
     <main className="auth-page">
       <div className="auth-page__top">
         <BrandMark />
-        <Link className="topbar__link" to="/">
+        <Link className="topbar__link" to="/events">
           Back to discovery <span aria-hidden="true">↗</span>
         </Link>
       </div>

@@ -78,12 +78,12 @@ export default function EventDetailsPage() {
     <div className="site-shell">
       <AccountHeader />
       <main className="event-detail content-width">
-        <Link className="topbar__link" to="/">← Back to events</Link>
+        <Link className="topbar__link" to="/events">← Back to events</Link>
         {isLoading ? (
           <p className="auth-loading" role="status">Loading event…</p>
         ) : error && !event ? (
           <div className="alert alert--error" role="alert">
-            {error} <Link to="/">Return to discovery</Link>
+            {error} <Link to="/events">Return to discovery</Link>
           </div>
         ) : event && (
           <article className="event-detail__card">

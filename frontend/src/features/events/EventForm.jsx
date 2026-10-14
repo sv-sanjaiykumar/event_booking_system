@@ -3,6 +3,17 @@ import { useState } from "react";
 import { getApiErrorMessage } from "../../api/client.js";
 
 function eventPayload(formData) {
+  const eventName = formData.name.trim();
+  const [firstCharacter, ...remainingCharacters] = eventName;
+  if (
+    !firstCharacter ||
+    !/^\p{L}$/u.test(firstCharacter) ||
+    remainingCharacters.some((character) => !/^[\p{L}\p{N} ]$/u.test(character))
+  ) {
+    throw new Error(
+      "Event name must start with a letter and contain only letters, numbers, and spaces.",
+    );
+  }
   const date = new Date(formData.date);
   if (Number.isNaN(date.getTime())) {
     throw new Error("Choose a valid event date and time.");
@@ -15,7 +26,7 @@ function eventPayload(formData) {
     throw new Error("Capacity must be a positive whole number.");
   }
   return {
-    name: formData.name.trim(),
+    name: eventName,
     description: formData.description.trim() || null,
     total_seats: totalSeats,
     date: date.toISOString(),
@@ -88,6 +99,9 @@ export default function EventForm({ initial = {}, submitLabel, onSubmit, onCance
         value={name}
         onChange={(event) => setName(event.target.value)}
       />
+      <p className="field-hint">
+        Start with a letter. Use only letters, numbers, and spaces.
+      </p>
       <label htmlFor={fieldId("description")}>Description</label>
       <textarea
         id={fieldId("description")}

@@ -37,9 +37,11 @@ Open <http://127.0.0.1:5173>. The API base URL defaults to `http://127.0.0.1:800
 
 The frontend uses the backend's bearer-token contract. The short-lived access token is stored in tab-scoped `sessionStorage` so a reload can restore the session; on initialization, the UI calls `GET /auth/me` and trusts only the returned user profile for role-based routing. Tokens are not stored in `localStorage`, shown in the UI, or logged. A `401` clears the tab session and redirects protected pages to sign-in; logout calls the backend to revoke the session and clears the local token. Keep the backend JWT secret private and use HTTPS in production.
 
-Public routes are `/` and `/events/:eventId`; authentication routes are `/login` and `/register`. Protected routes include `/attendee/dashboard`, `/creator/dashboard`, and the creator-only `/creator/events/new` event creation page. API role and ownership checks remain authoritative; hiding UI controls does not grant access.
+The root route `/` redirects to event discovery at `/events`. Public event routes are `/events` and `/events/:eventId`; authentication routes are `/login` and `/register`. Protected routes include `/attendee/dashboard`, `/creator/dashboard`, and the creator-only `/creator/events/new` event creation page. API role and ownership checks remain authoritative; hiding UI controls does not grant access.
 
 Registration accepts attendee or creator roles, matching backend validation. Passwords must be at least 12 characters with at least three of lowercase, uppercase, digits, and symbols. Event booking does not accept an attendee name or quantity: the backend associates one seat with the authenticated attendee. Event dates entered by creators are converted from local browser time to an ISO timestamp with a UTC offset.
+
+Creator event names must start with a letter and may contain only letters, numbers, and spaces. The frontend checks this before submission and the backend validates it for all API requests.
 
 The frontend only accesses event and booking data through Axios and the FastAPI API. Booking history is fetched from `GET /bookings/me`; it is not cached in browser storage.
 
