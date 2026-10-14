@@ -38,5 +38,9 @@ class EventAlreadyStartedError(Exception):
     pass
 
 
+class DuplicateEventError(Exception):
+    pass
+
+
 class CapacityBelowBookingsError(Exception):
     pass

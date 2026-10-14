@@ -100,6 +100,9 @@ def test_auth_migration_preserves_historical_records_without_fake_owners(
         user_indexes = {
             row[1] for row in connection.execute("PRAGMA index_list(users)")
         }
+        event_indexes = {
+            row[1] for row in connection.execute("PRAGMA index_list(events)")
+        }
         foreign_key_violations = connection.execute(
             "PRAGMA foreign_key_check"
         ).fetchall()
@@ -124,7 +127,8 @@ def test_auth_migration_preserves_historical_records_without_fake_owners(
     assert tuple(existing_account) == (12, "account@example.com")
     assert tuple(existing_session) == (3, 12, "existing-session-id")
     assert "ix_users_email" in user_indexes
-    assert version == "20261014_02"
+    assert "uq_events_published_name_date" in event_indexes
+    assert version == "20261014_03"
     assert foreign_key_violations == []
 
 

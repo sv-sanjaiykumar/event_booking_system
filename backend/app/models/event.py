@@ -1,7 +1,16 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import CheckConstraint, ForeignKey, Integer, String, TIMESTAMP, Text
+from sqlalchemy import (
+    CheckConstraint,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    TIMESTAMP,
+    Text,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
@@ -20,6 +29,14 @@ class Event(Base):
         ),
         CheckConstraint(
             "status IN ('published', 'cancelled')", name="ck_events_status_allowed"
+        ),
+        Index(
+            "uq_events_published_name_date",
+            text("lower(trim(name))"),
+            "date",
+            unique=True,
+            sqlite_where=text("status = 'published'"),
+            postgresql_where=text("status = 'published'"),
         ),
     )
 

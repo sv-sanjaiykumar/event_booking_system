@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 
 def register_user(client, role="creator", email="creator@example.com", name="Alex"):
     response = client.post(
@@ -54,6 +56,78 @@ def test_public_listing_and_creator_event_creation(client):
         created
     ]
     assert client.get("/events/?q=missing").json() == []
+
+
+def test_same_name_and_time_are_unique_across_creators(client):
+    _creator, first_creator_headers = register_user(
+        client, email="first-creator@example.com"
+    )
+    _other_creator, other_creator_headers = register_user(
+        client, email="other-creator@example.com"
+    )
+    date = future_date()
+    equivalent_date = datetime.fromisoformat(date).astimezone(
+        timezone(timedelta(hours=5, minutes=30))
+    ).isoformat()
+    first = client.post(
+        "/events/",
+        headers=first_creator_headers,
+        json={
+            "name": "Shared Showcase",
+            "total_seats": 10,
+            "date": date,
+        },
+    )
+    duplicate = client.post(
+        "/events/",
+        headers=other_creator_headers,
+        json={
+            "name": "  shared showcase  ",
+            "total_seats": 5,
+            "date": equivalent_date,
+        },
+    )
+    different_name = client.post(
+        "/events/",
+        headers=other_creator_headers,
+        json={
+            "name": "Different Showcase",
+            "total_seats": 5,
+            "date": date,
+        },
+    )
+
+    assert first.status_code == 201
+    assert duplicate.status_code == 409
+    assert duplicate.json()["detail"] == (
+        "An event with this name is already scheduled at this date and time."
+    )
+    assert different_name.status_code == 201
+    assert different_name.json()["date"] == first.json()["date"]
+
+
+def test_event_update_cannot_create_duplicate_name_and_time(client):
+    _creator, creator_headers = register_user(client)
+    date = future_date()
+    first = client.post(
+        "/events/",
+        headers=creator_headers,
+        json={"name": "First Showcase", "total_seats": 10, "date": date},
+    )
+    second = client.post(
+        "/events/",
+        headers=creator_headers,
+        json={"name": "Second Showcase", "total_seats": 10, "date": date},
+    )
+    duplicate_update = client.patch(
+        f"/events/{second.json()['id']}",
+        headers=creator_headers,
+        json={"name": "First Showcase"},
+    )
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+    assert duplicate_update.status_code == 409
 
 
 def test_unknown_event_returns_404(client):
@@ -146,6 +220,68 @@ def test_event_date_requires_timezone(client):
         },
     )
 
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "2026 Conference",
+        "Summer-Fest",
+        "Music & Arts",
+        "Meetup!",
+        "Name_One",
+    ],
+)
+def test_event_name_rejects_non_letter_start_or_special_characters(client, name):
+    _user, headers = register_user(client)
+    response = client.post(
+        "/events/",
+        headers=headers,
+        json={
+            "name": name,
+            "total_seats": 10,
+            "date": future_date(),
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_event_name_allows_letters_numbers_and_spaces(client):
+    _user, headers = register_user(client)
+    response = client.post(
+        "/events/",
+        headers=headers,
+        json={
+            "name": "Festival 2026",
+            "total_seats": 10,
+            "date": future_date(),
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["name"] == "Festival 2026"
+
+
+def test_event_update_rejects_special_characters_in_name(client):
+    _user, headers = register_user(client)
+    event = client.post(
+        "/events/",
+        headers=headers,
+        json={
+            "name": "Festival 2026",
+            "total_seats": 10,
+            "date": future_date(),
+        },
+    )
+    response = client.patch(
+        f"/events/{event.json()['id']}",
+        headers=headers,
+        json={"name": "Festival 2026!"},
+    )
+
+    assert event.status_code == 201
     assert response.status_code == 422
 
 

@@ -52,8 +52,8 @@ FastAPI serves Swagger UI at <http://127.0.0.1:8000/docs>, ReDoc at <http://127.
 | `GET` | `/auth/me` | Return the authenticated account. |
 | `GET` | `/events/?page=1&page_size=20&q=meetup` | Public, paginated event search. Only published events are listed. |
 | `GET` | `/events/{event_id}` | Retrieve an event or return `404`. |
-| `POST` | `/events/` | Creator-only event creation. The authenticated creator is recorded as owner. |
-| `PATCH` | `/events/{event_id}` | Creator-owner-only edit. Events must be in the future; capacity cannot be reduced below existing bookings. |
+| `POST` | `/events/` | Creator-only event creation. Names must start with a letter and contain only letters, numbers, and spaces. The authenticated creator is recorded as owner. A published event cannot share a name and date/time with another published event (`409`); differently named events may share a time. |
+| `PATCH` | `/events/{event_id}` | Creator-owner-only edit. Names follow the same letter/number/space rule. Events must be in the future; capacity cannot be reduced below existing bookings, and edits cannot create duplicate published event names/date-times (`409`). |
 | `DELETE` | `/events/{event_id}` | Creator-owner-only cancellation. The event is marked cancelled; its bookings are retained. |
 | `GET` | `/creator/events` | List events owned by the authenticated creator. |
 | `GET` | `/creator/events/{event_id}/bookings` | List bookings for an event owned by the authenticated creator. |
@@ -71,6 +71,8 @@ The frontend keeps only the short-lived access token in tab-scoped `sessionStora
 Seat reservation is a conditional database update, followed by the booking insert in the same transaction. Cancellation conditionally deletes the owned booking and restores its seat in the same transaction. Both operations are safe against concurrent requests. SQLite check constraints enforce valid seat counts.
 
 Event timestamps are accepted with a timezone and stored as UTC timestamps in SQLite. The API returns them as UTC. When an API booking is created, the backend captures the application system clock in UTC and stores that booking time; SQLite's `CURRENT_TIMESTAMP` remains a fallback default for direct database inserts.
+
+Duplicate prevention compares trimmed event names without regard to case and compares the actual UTC instant, so timestamps with different timezone offsets still count as the same time. A database unique index backs up the API check for concurrent creates and edits. Cancelled events do not reserve a name/time combination.
 
 ## Loading sample data
 

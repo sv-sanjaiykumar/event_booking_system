@@ -13,6 +13,7 @@ from app.services.exceptions import (
     EventAlreadyStartedError,
     EventCancelledError,
     EventNotFoundError,
+    DuplicateEventError,
 )
 
 router = APIRouter(tags=["events"])
@@ -53,6 +54,11 @@ def create_event(
 ) -> EventResponse:
     try:
         return event_service.create_event(db, event_data, creator.id)
+    except DuplicateEventError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An event with this name is already scheduled at this date and time.",
+        ) from exc
     except EventAlreadyStartedError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -75,6 +81,11 @@ def update_event(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found.",
+        ) from exc
+    except DuplicateEventError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An event with this name is already scheduled at this date and time.",
         ) from exc
     except EventCancelledError as exc:
         raise HTTPException(

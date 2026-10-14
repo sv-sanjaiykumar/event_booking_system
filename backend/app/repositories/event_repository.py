@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy import func, select, update
@@ -23,6 +23,22 @@ def create_event(db: Session, event_data: EventCreate, creator_id: int) -> Event
     db.add(event)
     db.flush()
     return event
+
+
+def published_event_exists_at_date(
+    db: Session,
+    name: str,
+    event_date: datetime,
+    exclude_event_id: Optional[int] = None,
+) -> bool:
+    statement = select(Event.id).where(
+        Event.status == "published",
+        func.lower(func.trim(Event.name)) == name.strip().lower(),
+        Event.date == event_date,
+    )
+    if exclude_event_id is not None:
+        statement = statement.where(Event.id != exclude_event_id)
+    return db.scalar(statement.limit(1)) is not None
 
 
 def get_event(db: Session, event_id: int) -> Optional[Event]:

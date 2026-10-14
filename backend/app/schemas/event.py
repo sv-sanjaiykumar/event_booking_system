@@ -10,6 +10,21 @@ from pydantic import (
 )
 
 
+def _validated_event_name(value: str) -> str:
+    name = value.strip()
+    if not name:
+        raise ValueError("Name must not be blank.")
+    if not name[0].isalpha() or any(
+        not (character.isalpha() or character.isdigit() or character == " ")
+        for character in name
+    ):
+        raise ValueError(
+            "Event name must start with a letter and contain only letters, "
+            "numbers, and spaces."
+        )
+    return name
+
+
 class EventCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     description: Optional[str] = Field(default=None, max_length=5000)
@@ -19,10 +34,7 @@ class EventCreate(BaseModel):
     @field_validator("name")
     @classmethod
     def name_must_not_be_blank(cls, value: str) -> str:
-        name = value.strip()
-        if not name:
-            raise ValueError("Name must not be blank.")
-        return name
+        return _validated_event_name(value)
 
     @field_validator("date")
     @classmethod
@@ -43,10 +55,7 @@ class EventUpdate(BaseModel):
     def update_name_must_not_be_blank(cls, value: Optional[str]) -> Optional[str]:
         if value is None:
             return value
-        name = value.strip()
-        if not name:
-            raise ValueError("Name must not be blank.")
-        return name
+        return _validated_event_name(value)
 
     @field_validator("date")
     @classmethod
