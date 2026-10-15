@@ -5,6 +5,23 @@ SQLite database, and generated Python SDK. Attendees can discover events, book
 multiple seats with confirmation, view their bookings, and cancel some or all
 of their seats. Creators can manage events and view attendee bookings.
 
+## Project preview
+
+<table>
+  <tr>
+    <td align="center"><strong>Event discovery</strong><br><img src="docs/images/preview-discovery.png" alt="Gather event discovery page" width="480"></td>
+    <td align="center"><strong>Sign in</strong><br><img src="docs/images/preview-sign-in.png" alt="Gather sign-in page" width="480"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Create an account</strong><br><img src="docs/images/preview-registration.png" alt="Gather account registration page" width="480"></td>
+    <td align="center"><strong>Creator dashboard</strong><br><img src="docs/images/preview-creator-dashboard.png" alt="Creator dashboard with event management and attendee actions" width="480"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Create an event</strong><br><img src="docs/images/preview-create-event.png" alt="Creator event creation form with address field" width="480"></td>
+    <td align="center"><strong>Attendee dashboard</strong><br><img src="docs/images/preview-attendee-dashboard.png" alt="Attendee dashboard showing bookings and seat details" width="480"></td>
+  </tr>
+</table>
+
 ## Features
 
 - Public event discovery, search, event details, and live seat availability.
