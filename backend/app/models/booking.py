@@ -1,6 +1,16 @@
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, ForeignKey, Integer, Text, TIMESTAMP, func
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    CheckConstraint,
+    ForeignKey,
+    Integer,
+    Text,
+    TIMESTAMP,
+    false,
+    func,
+)
 from typing import Optional
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -24,6 +34,15 @@ class Booking(Base):
     user_name: Mapped[str] = mapped_column(Text, nullable=False)
     quantity: Mapped[int] = mapped_column(
         Integer, nullable=False, default=1, server_default="1"
+    )
+    attendee_names: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, default=list, server_default="'[]'"
+    )
+    seat_numbers: Mapped[list[int]] = mapped_column(
+        JSON, nullable=False, default=list, server_default="'[]'"
+    )
+    includes_booker: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
     )
     booking_date: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=False, server_default=func.current_timestamp()

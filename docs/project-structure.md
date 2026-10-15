@@ -12,12 +12,12 @@ For a file-by-file guide to the implemented backend and its request flow, see [B
 - **`app/api/`** — Holds the HTTP-facing API code: routes, shared dependencies, and API versioning.
   - **`dependencies.py`** — Shared request-time helpers, such as retrieving the current user or providing a database session.
   - **`v1/api.py`** — Combines the version 1 routes into a router, so they can be registered in `main.py`.
-  - **`v1/endpoints/`** — Route modules for features such as events, bookings, and authentication. For example, an events endpoint might expose operations to list or create events.
+- **`v1/endpoints/`** — Route modules for authentication, event discovery and creator management, and attendee bookings/cancellations.
 - **`app/core/`** — Application-wide configuration and infrastructure: environment settings, authentication/security helpers, and logging.
 - **`app/db/`** — Database setup, such as creating connections and sessions and defining shared model metadata.
-- **`app/models/`** — Database table definitions. An `Event` model might hold an event’s title, date, venue, and capacity.
-- **`app/schemas/`** — Pydantic models for validating incoming data and shaping API responses. For example, an event-creation schema can require a title and date. These schemas also help FastAPI produce accurate OpenAPI documentation.
-- **`app/services/`** — Business rules that shouldn’t live directly in route handlers. A booking service could check event capacity before confirming a reservation.
+- **`app/models/`** — SQLAlchemy table definitions for users, events (including optional venue address), sessions, and bookings with attendee and seat details.
+- **`app/schemas/`** — Pydantic models that validate event and booking requests and shape API responses, including the generated OpenAPI contract.
+- **`app/services/`** — Business rules for authentication, event ownership and editing, seat availability, one self ticket per attendee per event, and cancellation.
 - **`app/repositories/`** — Database queries and persistence operations. This keeps data access separate from the booking rules that use it.
 - **`migrations/`** — Alembic database migration scripts, used to evolve the schema as the application changes.
 - **`tests/`** — Automated backend tests.
@@ -36,12 +36,10 @@ The frontend is the browser-based interface attendees and organizers use to brow
 - **`src/app/`** — Application-wide setup, such as routing, shared providers, and global configuration.
 - **`src/api/`** — The code that communicates with the backend, such as functions to fetch events or submit bookings.
 - **`src/components/`** — Reusable UI pieces used in multiple places, such as buttons, form fields, or event cards.
-- **`src/features/`** — Code grouped by product feature, such as events, bookings, and authentication. A booking feature might contain its form, API calls, and related UI.
-- **`src/hooks/`** — Shared React hooks for reusable behavior.
-- **`src/layouts/`** — Page structures shared across screens, such as a common header and navigation.
-- **`src/pages/`** — Full pages, for example an event list, event details, sign-in, or booking history.
-- **`src/types/`** — Shared frontend data and type definitions, if using TypeScript or JSDoc.
-- **`tests/`** — Frontend tests for components and user interactions.
+- **`src/features/`** — Authentication, event creation/discovery/management, and attendee booking flows, grouped with their API and UI code.
+- **`src/components/`** — Shared interface components, including the public event card and brand mark.
+- **`src/styles.css`** — Application-wide styles and responsive layouts.
+- **`src/features/` test files** — Component and utility tests colocated with the relevant feature.
 - **`package.json`** — JavaScript dependencies and scripts, such as starting the development server or running tests.
 - **`vite.config.js`** — Configuration for Vite, the frontend development server and build tool.
 

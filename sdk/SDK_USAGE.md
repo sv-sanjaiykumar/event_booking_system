@@ -51,8 +51,11 @@ with ApiClient(configuration) as client:
     events_api = EventsApi(client)
     events = events_api.list_events_events_get(page=1, page_size=20)
     for event in events:
-        print(event.name, event.available_seats)
+        print(event.name, event.location, event.available_seats)
 ```
+
+Event `location` is optional. Creators can supply or update the venue address
+using the `location` field on `EventCreate` and `EventUpdate`.
 
 ## Call authenticated operations
 
@@ -90,9 +93,10 @@ Use credentials from a local test account and do not hard-code real passwords
 or access tokens. Generated methods and model fields reflect the OpenAPI
 document at generation time; regenerate after API contract changes.
 
-To reserve multiple seats, create a `BookingCreate` request. The API checks
-that the requested quantity is between one and the event's current available
-seat count:
+To reserve seats, create a `BookingCreate` request. Each account can include
+itself on one booking per event. Set `includes_booker=False` for additional
+guest-only bookings. The API checks that the requested quantity is between
+one and the event's current available seat count:
 
 ```python
 from event_sdk import ApiClient, BookingCreate, Configuration
@@ -106,21 +110,31 @@ with ApiClient(configuration) as client:
     bookings_api = BookingsApi(client)
     booking = bookings_api.book_event_events_event_id_book_post(
         event_id=1,
-        booking_create=BookingCreate(quantity=2),
+        booking_create=BookingCreate(
+            quantity=2,
+            attendee_names=["Alex Morgan", "Taylor Guest"],
+            includes_booker=True,
+        ),
     )
-    print(booking.quantity)
+    print(booking.quantity, booking.seat_numbers, booking.attendee_names)
 ```
 
-To cancel only some of a multi-seat booking, pass the number of seats to
-release. The booking remains active with its reduced quantity; omitting
-`quantity` cancels all seats still on the booking:
+An attendee may include their own account on only one booking per event.
+Additional bookings for other attendees are allowed by setting
+`includes_booker=False`.
+
+To cancel selected seats, send their 1-based seat numbers. The booking remains
+active with only the uncancelled attendee names; omitting `booking_cancellation`
+cancels all seats:
 
 ```python
+from event_sdk import BookingCancellation
+
 with ApiClient(configuration) as client:
     bookings_api = BookingsApi(client)
     bookings_api.cancel_booking_bookings_booking_id_delete(
         booking_id=1,
-        quantity=1,
+        booking_cancellation=BookingCancellation(seat_numbers=[2]),
     )
 ```
 

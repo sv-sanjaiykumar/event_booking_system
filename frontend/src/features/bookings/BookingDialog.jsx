@@ -3,7 +3,39 @@ import { useEffect, useRef, useState } from "react";
 export default function BookingDialog({ event, onClose, onSubmit, isSaving, error }) {
   const submitRef = useRef(null);
   const [quantity, setQuantity] = useState("1");
+  const [attendeeNames, setAttendeeNames] = useState([event.attendeeName]);
+  const [includesBooker, setIncludesBooker] = useState(true);
   const [isConfirming, setIsConfirming] = useState(false);
+  const seatCount = Number(quantity);
+
+  function updateQuantity(value) {
+    setQuantity(value);
+    const nextCount = Number(value);
+    if (!Number.isInteger(nextCount) || nextCount < 1) return;
+    setAttendeeNames((currentNames) =>
+      Array.from(
+        { length: nextCount },
+        (_, index) => currentNames[index] ?? "",
+      ),
+    );
+  }
+
+  function updateAttendeeName(index, name) {
+    setAttendeeNames((currentNames) =>
+      currentNames.map((currentName, nameIndex) =>
+        nameIndex === index ? name : currentName,
+      ),
+    );
+  }
+
+  function updateIncludesBooker(checked) {
+    setIncludesBooker(checked);
+    setAttendeeNames((currentNames) =>
+      currentNames.map((name, index) =>
+        index === 0 ? (checked ? event.attendeeName : "") : name,
+      ),
+    );
+  }
 
   useEffect(() => {
     submitRef.current?.focus();
@@ -63,21 +95,58 @@ export default function BookingDialog({ event, onClose, onSubmit, isSaving, erro
               step="1"
               required
               value={quantity}
-              onChange={(eventObject) => setQuantity(eventObject.target.value)}
+                onChange={(eventObject) => updateQuantity(eventObject.target.value)}
               disabled={isSaving}
             />
             <p className="field-hint">
               Choose from 1 to {event.available_seats} available {event.available_seats === 1 ? "seat" : "seats"}.
             </p>
+            {Number.isInteger(seatCount) && seatCount >= 1 && seatCount <= event.available_seats && (
+              <fieldset className="booking-dialog__attendees">
+                <legend>Who is attending?</legend>
+                <label className="booking-dialog__self-toggle">
+                  <input
+                    type="checkbox"
+                    checked={includesBooker}
+                    onChange={(eventObject) => updateIncludesBooker(eventObject.target.checked)}
+                    disabled={isSaving}
+                  />
+                  Include me as an attendee
+                </label>
+                {attendeeNames.slice(0, seatCount).map((name, index) => (
+                  <div className="booking-dialog__attendee" key={index}>
+                    <label htmlFor={`booking-attendee-${index}`}>
+                      Seat {index + 1}{index === 0 && includesBooker ? " · You" : " · Guest"}
+                    </label>
+                    <input
+                      id={`booking-attendee-${index}`}
+                      type="text"
+                      maxLength="120"
+                      required
+                      autoComplete="name"
+                      value={name}
+                      placeholder={index === 0 ? "Attendee name" : `Guest ${index + 1} name`}
+                      onChange={(eventObject) => updateAttendeeName(index, eventObject.target.value)}
+                      readOnly={index === 0 && includesBooker}
+                      disabled={isSaving}
+                    />
+                  </div>
+                ))}
+                <p className="field-hint">
+                  You can reserve one seat for yourself per event and book additional seats for guests.
+                </p>
+              </fieldset>
+            )}
             <button
               ref={submitRef}
               className="button button--dark booking-dialog__submit"
               type="submit"
               disabled={
                 isSaving ||
-                !Number.isInteger(Number(quantity)) ||
-                Number(quantity) < 1 ||
-                Number(quantity) > event.available_seats
+                !Number.isInteger(seatCount) ||
+                seatCount < 1 ||
+                seatCount > event.available_seats ||
+                attendeeNames.slice(0, seatCount).some((name) => !name.trim())
               }
             >
               Review booking <span aria-hidden="true">↗</span>
@@ -89,6 +158,11 @@ export default function BookingDialog({ event, onClose, onSubmit, isSaving, erro
               You’re about to book {quantity} {Number(quantity) === 1 ? "seat" : "seats"} for this event.
               Your booking will be created only after you confirm below.
             </p>
+            <ol className="booking-dialog__attendee-summary">
+              {attendeeNames.slice(0, seatCount).map((name, index) => (
+                <li key={index}>Seat {index + 1}: {name.trim()}</li>
+              ))}
+            </ol>
             <button
               className="text-button"
               type="button"
@@ -102,7 +176,11 @@ export default function BookingDialog({ event, onClose, onSubmit, isSaving, erro
               className="button button--dark booking-dialog__submit"
               type="button"
               disabled={isSaving}
-              onClick={() => onSubmit(Number(quantity))}
+              onClick={() => onSubmit(
+                seatCount,
+                attendeeNames.slice(0, seatCount).map((name) => name.trim()),
+                includesBooker,
+              )}
             >
               {isSaving
                 ? "Saving your spot…"

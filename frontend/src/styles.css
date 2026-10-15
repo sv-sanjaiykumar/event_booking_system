@@ -788,6 +788,13 @@ button {
   -webkit-line-clamp: 2;
 }
 
+.event-card__location {
+  margin: -8px 0 16px;
+  color: #636b5a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .availability__label {
   display: flex;
   justify-content: space-between;
@@ -975,8 +982,9 @@ button {
 .booking-row {
   display: flex;
   min-height: 88px;
-  align-items: center;
+  align-items: flex-start;
   gap: 17px;
+  padding: 20px 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -989,7 +997,7 @@ button {
   background: #e8eddf;
   color: #536b43;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .booking-row__details {
@@ -1003,7 +1011,7 @@ button {
 .booking-row__details strong {
   overflow: hidden;
   font-family: var(--serif);
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1012,13 +1020,61 @@ button {
 .booking-row__details span,
 .booking-row__details small {
   color: #858a80;
-  font-size: 10px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .booking-row__details small {
   color: #a0a49a;
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 12px;
+}
+
+.booking-row__seat-list {
+  display: grid;
+  gap: 3px;
+  margin: 2px 0;
+  padding-left: 20px;
+  color: #686e63;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.booking-row__cancel {
+  flex: 0 0 auto;
+  margin: 2px 0 0 auto;
+  font-size: 14px;
+}
+
+.booking-row__cancel:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  text-decoration: none;
+}
+
+.booking-row__attendees {
+  color: #617e45;
+  font-size: 13px;
+}
+
+.booking-row__attendees summary {
+  width: fit-content;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.booking-row__attendees ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 5px 18px;
+  max-height: 220px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 10px 10px 10px 28px;
+  background: #f6f6f1;
+  color: #686e63;
+  font-size: 12px;
 }
 
 .local-bookings-note {
@@ -1225,6 +1281,56 @@ button {
   justify-content: space-between;
 }
 
+.booking-dialog__attendees {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 15px;
+  border: 1px solid #dfe2d8;
+}
+
+.booking-dialog__attendees legend,
+.cancel-dialog__options legend {
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.booking-dialog__attendee label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.booking-dialog__self-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+}
+
+.booking-dialog__self-toggle input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #617d46;
+}
+
+.booking-dialog__attendees .field-hint {
+  margin: 0;
+}
+
+.booking-dialog__attendee input {
+  width: 100%;
+}
+
+.booking-dialog__attendee-summary {
+  margin: 12px 0 20px;
+  padding-left: 22px;
+  color: #555b50;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
 .cancel-dialog {
   width: min(100%, 470px);
   padding-top: 38px;
@@ -1262,22 +1368,41 @@ button {
   line-height: 1.75;
 }
 
-.cancel-dialog__quantity-label {
-  display: block;
-  margin-bottom: 7px;
-  font-size: 11px;
-  font-weight: 700;
+.cancel-dialog__options {
+  display: grid;
+  gap: 11px;
+  margin: 0 0 18px;
+  padding: 15px;
+  border: 1px solid #dfe2d8;
 }
 
-.cancel-dialog__quantity {
-  width: 100%;
-  min-height: 43px;
-  margin-bottom: 22px;
-  padding: 0 12px;
-  border: 1px solid #dfe2d8;
-  border-radius: 2px;
-  background: #fff;
+.cancel-dialog__options label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-size: 12px;
+}
+
+.cancel-dialog__options input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #617d46;
+}
+
+.cancel-dialog__seat-summary {
+  margin: 0 0 22px;
+  color: #555b50;
+  font-size: 12px;
+}
+
+.cancel-dialog__seat-options {
+  max-height: 190px;
+  overflow-y: auto;
+}
+
+.cancel-dialog__seat-options .field-hint {
+  margin: 0;
 }
 
 .cancel-dialog__actions {
@@ -1796,7 +1921,7 @@ button {
   .dashboard-stat span {
     color: var(--muted);
     font-family: var(--mono);
-    font-size: 8px;
+    font-size: 11px;
     letter-spacing: 1px;
   }
 
@@ -1866,8 +1991,14 @@ button {
 
   .creator-event__description {
     color: var(--muted);
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .creator-event__location {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 13px;
   }
 
   .creator-event__metrics {
@@ -1876,7 +2007,7 @@ button {
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
     color: var(--muted);
-    font-size: 10px;
+    font-size: 13px;
   }
 
   .creator-event__metrics strong {
@@ -1898,7 +2029,7 @@ button {
     background: #eff4e7;
     color: #526e40;
     font-family: var(--mono);
-    font-size: 8px;
+    font-size: 11px;
     text-transform: uppercase;
   }
 
@@ -1917,16 +2048,20 @@ button {
 
   .creator-bookings li {
     display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 14px;
-    padding: 12px 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto auto;
+    align-items: center;
+    gap: 10px 18px;
+    padding: 13px 0;
     border-bottom: 1px solid var(--line);
     color: #5d6358;
-    font-size: 10px;
+    font-size: 15px;
+    line-height: 1.55;
   }
 
   .creator-bookings time {
     color: var(--muted);
+    font-size: 14px;
+    text-align: right;
   }
 
   .event-detail {
@@ -1962,6 +2097,22 @@ button {
     color: var(--muted);
     font-size: 14px;
     line-height: 1.8;
+  }
+
+  .event-detail__location {
+    display: grid;
+    gap: 5px;
+    margin: 0 0 25px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .event-detail__location strong {
+    color: #71835b;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
   }
 
   .event-detail__card .dashboard-stats {
@@ -2016,9 +2167,16 @@ button {
 
     .creator-bookings li {
       grid-template-columns: 1fr auto;
+      gap: 7px;
+      font-size: 14px;
+    }
+
+    .creator-bookings li > :nth-child(2) {
+      grid-column: 1 / -1;
     }
 
     .creator-bookings time {
       grid-column: 1 / -1;
+      text-align: left;
     }
   }

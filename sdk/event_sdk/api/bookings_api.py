@@ -18,6 +18,7 @@ from typing_extensions import Annotated
 from pydantic import Field, StrictInt
 from typing import List, Optional
 from typing_extensions import Annotated
+from event_sdk.models.booking_cancellation import BookingCancellation
 from event_sdk.models.booking_create import BookingCreate
 from event_sdk.models.booking_response import BookingResponse
 from event_sdk.models.my_booking_response import MyBookingResponse
@@ -325,15 +326,14 @@ class BookingsApi:
             _host=_host,
             _request_auth=_request_auth
         )
-
-
-
+*** End of File
 
     @validate_call
     def cancel_booking_bookings_booking_id_delete(
         self,
         booking_id: StrictInt,
         quantity: Optional[Annotated[int, Field(strict=True, ge=1)]] = None,
+        booking_cancellation: Optional[BookingCancellation] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -354,6 +354,8 @@ class BookingsApi:
         :type booking_id: int
         :param quantity:
         :type quantity: int
+        :param booking_cancellation:
+        :type booking_cancellation: BookingCancellation
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -379,6 +381,7 @@ class BookingsApi:
         _param = self._cancel_booking_bookings_booking_id_delete_serialize(
             booking_id=booking_id,
             quantity=quantity,
+            booking_cancellation=booking_cancellation,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -405,6 +408,7 @@ class BookingsApi:
         self,
         booking_id: StrictInt,
         quantity: Optional[Annotated[int, Field(strict=True, ge=1)]] = None,
+        booking_cancellation: Optional[BookingCancellation] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -425,6 +429,8 @@ class BookingsApi:
         :type booking_id: int
         :param quantity:
         :type quantity: int
+        :param booking_cancellation:
+        :type booking_cancellation: BookingCancellation
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -450,6 +456,7 @@ class BookingsApi:
         _param = self._cancel_booking_bookings_booking_id_delete_serialize(
             booking_id=booking_id,
             quantity=quantity,
+            booking_cancellation=booking_cancellation,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -476,6 +483,7 @@ class BookingsApi:
         self,
         booking_id: StrictInt,
         quantity: Optional[Annotated[int, Field(strict=True, ge=1)]] = None,
+        booking_cancellation: Optional[BookingCancellation] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -496,6 +504,8 @@ class BookingsApi:
         :type booking_id: int
         :param quantity:
         :type quantity: int
+        :param booking_cancellation:
+        :type booking_cancellation: BookingCancellation
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -521,6 +531,7 @@ class BookingsApi:
         _param = self._cancel_booking_bookings_booking_id_delete_serialize(
             booking_id=booking_id,
             quantity=quantity,
+            booking_cancellation=booking_cancellation,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -542,6 +553,7 @@ class BookingsApi:
         self,
         booking_id,
         quantity,
+        booking_cancellation,
         _request_auth,
         _content_type,
         _headers,
@@ -572,6 +584,8 @@ class BookingsApi:
         # process the header parameters
         # process the form parameters
         # process the body parameter
+        if booking_cancellation is not None:
+            _body_params = booking_cancellation
 
 
         # set the HTTP header `Accept`
@@ -582,6 +596,19 @@ class BookingsApi:
                 ]
             )
 
+        # set the HTTP header `Content-Type`
+        if _content_type:
+            _header_params['Content-Type'] = _content_type
+        else:
+            _default_content_type = (
+                self.api_client.select_header_content_type(
+                    [
+                        'application/json'
+                    ]
+                )
+            )
+            if _default_content_type is not None:
+                _header_params['Content-Type'] = _default_content_type
 
         # authentication setting
         _auth_settings: List[str] = [
@@ -1106,4 +1133,3 @@ class BookingsApi:
             _host=_host,
             _request_auth=_request_auth
         )
-

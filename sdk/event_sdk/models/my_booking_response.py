@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List
 from typing import Optional, Set
 from typing_extensions import Self
@@ -32,11 +32,14 @@ class MyBookingResponse(BaseModel):
     event_id: StrictInt
     user_name: StrictStr
     quantity: StrictInt
+    attendee_names: List[StrictStr]
+    seat_numbers: List[StrictInt] = Field(default_factory=list)
+    includes_booker: StrictBool = False
     booking_date: datetime
     event_name: StrictStr
     event_date: datetime
     event_status: StrictStr
-    __properties: ClassVar[List[str]] = ["id", "event_id", "user_name", "quantity", "booking_date", "event_name", "event_date", "event_status"]
+    __properties: ClassVar[List[str]] = ["id", "event_id", "user_name", "quantity", "attendee_names", "seat_numbers", "includes_booker", "booking_date", "event_name", "event_date", "event_status"]
 
     model_config = ConfigDict(
         validate_by_name=True,
@@ -93,6 +96,9 @@ class MyBookingResponse(BaseModel):
             "event_id": obj.get("event_id"),
             "user_name": obj.get("user_name"),
             "quantity": obj.get("quantity"),
+            "attendee_names": obj.get("attendee_names"),
+            "seat_numbers": obj.get("seat_numbers", []),
+            "includes_booker": obj.get("includes_booker", False),
             "booking_date": obj.get("booking_date"),
             "event_name": obj.get("event_name"),
             "event_date": obj.get("event_date"),

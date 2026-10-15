@@ -28,21 +28,32 @@ VALUES
         '2026-11-28 10:00:00'
     );
 
-INSERT INTO bookings (event_id, user_name, booking_date)
+INSERT INTO bookings (
+    event_id, user_name, quantity, attendee_names, seat_numbers, booking_date
+)
 VALUES
     (
         (SELECT id FROM events WHERE name = 'Sample Music Festival'),
         'Alex Morgan',
+        1,
+        '["Alex Morgan"]',
+        '[1]',
         CURRENT_TIMESTAMP
     ),
     (
         (SELECT id FROM events WHERE name = 'Sample Music Festival'),
         'Jamie Lee',
+        1,
+        '["Jamie Lee"]',
+        '[2]',
         CURRENT_TIMESTAMP
     ),
     (
         (SELECT id FROM events WHERE name = 'Sample Community Workshop'),
         'Taylor Kim',
+        1,
+        '["Taylor Kim"]',
+        '[1]',
         CURRENT_TIMESTAMP
     );
 

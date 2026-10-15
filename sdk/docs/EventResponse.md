@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **id** | **int** |  | 
 **name** | **str** |  | 
 **description** | **str** |  | 
+**location** | **str** | Venue address for the event. | [optional]
 **total_seats** | **int** |  | 
 **available_seats** | **int** |  | 
 **var_date** | **datetime** |  | 

@@ -14,6 +14,27 @@ import {
   updateEvent,
 } from "./eventApi.js";
 
+function getEventSeatRows(bookings) {
+  let nextSeatNumber = 1;
+
+  return bookings.flatMap((booking) => {
+    const quantity = booking.quantity ?? 1;
+    const attendeeNames = booking.attendee_names?.length === quantity
+      ? booking.attendee_names
+      : Array(quantity).fill(booking.user_name);
+    const assignedSeatNumbers = booking.seat_numbers?.length === quantity
+      ? booking.seat_numbers
+      : Array.from({ length: quantity }, (_, index) => nextSeatNumber + index);
+    nextSeatNumber = Math.max(nextSeatNumber, ...assignedSeatNumbers) + 1;
+
+    return attendeeNames.map((name, seatIndex) => ({
+      booking,
+      name,
+      seatNumber: assignedSeatNumbers[seatIndex],
+    }));
+  }).sort((first, second) => first.seatNumber - second.seatNumber);
+}
+
 export default function CreatorDashboard() {
   const { user } = useAuth();
   const location = useLocation();
@@ -215,6 +236,9 @@ export default function CreatorDashboard() {
                     <p className="creator-event__description">
                       {event.description || "No event description added."}
                     </p>
+                    <p className="creator-event__location">
+                      <strong>Address:</strong> {event.location || "Not provided"}
+                    </p>
                     <div className="creator-event__metrics">
                       <span><strong>{event.total_seats - event.available_seats}</strong> booked</span>
                       <span><strong>{event.available_seats}</strong> available</span>
@@ -275,10 +299,10 @@ export default function CreatorDashboard() {
                         <p className="empty-bookings">No bookings to show for this event.</p>
                       ) : (
                         <ul className="creator-bookings">
-                          {bookings.map((booking) => (
-                            <li key={booking.id}>
-                              <span>{booking.user_name}</span>
-                              <span>{booking.quantity ?? 1} {(booking.quantity ?? 1) === 1 ? "seat" : "seats"}</span>
+                          {getEventSeatRows(bookings).map(({ booking, name, seatNumber }) => (
+                            <li key={`${booking.id}-seat-${seatNumber}`}>
+                              <span>Booked by {booking.user_name}</span>
+                              <span>Seat {seatNumber}: {name}</span>
                               <span>Booking #{booking.id}</span>
                               <time dateTime={booking.booking_date}>
                                 {new Date(booking.booking_date).toLocaleString()}

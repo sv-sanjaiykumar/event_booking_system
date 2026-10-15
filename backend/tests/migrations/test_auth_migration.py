@@ -8,10 +8,10 @@ from alembic.config import Config
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 
-def migrate_database(path, monkeypatch):
+def migrate_database(path, monkeypatch, revision="head"):
     monkeypatch.setenv("DATABASE_URL", "sqlite:///" + str(path))
     config = Config(str(BACKEND_ROOT / "alembic.ini"))
-    command.upgrade(config, "head")
+    command.upgrade(config, revision)
 
 
 def create_pre_auth_database(path):
@@ -85,7 +85,8 @@ def test_auth_migration_preserves_historical_records_without_fake_owners(
             "date, creator_id, status FROM events WHERE id = 4"
         ).fetchone()
         booking = connection.execute(
-            "SELECT id, event_id, user_name, booking_date, user_id, quantity "
+            "SELECT id, event_id, user_name, booking_date, user_id, quantity, "
+            "attendee_names "
             "FROM bookings WHERE id = 7"
         ).fetchone()
         version = connection.execute(
@@ -117,7 +118,7 @@ def test_auth_migration_preserves_historical_records_without_fake_owners(
         None,
         "published",
     )
-    assert tuple(booking) == (
+    assert tuple(booking[:6]) == (
         7,
         4,
         "Historical attendee",
@@ -125,11 +126,12 @@ def test_auth_migration_preserves_historical_records_without_fake_owners(
         None,
         1,
     )
+    assert booking["attendee_names"] == '["Historical attendee"]'
     assert tuple(existing_account) == (12, "account@example.com")
     assert tuple(existing_session) == (3, 12, "existing-session-id")
     assert "ix_users_email" in user_indexes
     assert "uq_events_published_name_date" in event_indexes
-    assert version == "20261015_04"
+    assert version == "20261015_05"
     assert foreign_key_violations == []
 
 
@@ -154,4 +156,26 @@ def test_auth_migration_initializes_a_blank_database(tmp_path, monkeypatch):
 
     assert {"users", "auth_sessions", "events", "bookings"} <= tables
     assert {"creator_id", "status"} <= event_columns
-    assert {"user_id", "quantity"} <= booking_columns
+    assert {"user_id", "quantity", "attendee_names"} <= booking_columns
+
+
+def test_attendee_name_migration_backfills_each_reserved_seat(
+    tmp_path, monkeypatch
+):
+    database_path = tmp_path / "multi-seat-bookings.db"
+    create_pre_auth_database(database_path)
+    migrate_database(database_path, monkeypatch, "20261015_04")
+
+    with sqlite3.connect(str(database_path)) as connection:
+        connection.execute("UPDATE bookings SET quantity = 3 WHERE id = 7")
+
+    migrate_database(database_path, monkeypatch)
+
+    with sqlite3.connect(str(database_path)) as connection:
+        attendees = connection.execute(
+            "SELECT attendee_names FROM bookings WHERE id = 7"
+        ).fetchone()[0]
+
+    assert attendees == (
+        '["Historical attendee", "Historical attendee", "Historical attendee"]'
+    )

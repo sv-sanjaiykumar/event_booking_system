@@ -91,7 +91,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **cancel_booking_bookings_booking_id_delete**
-> cancel_booking_bookings_booking_id_delete(booking_id, quantity=quantity)
+> cancel_booking_bookings_booking_id_delete(booking_id, quantity=quantity, booking_cancellation=booking_cancellation)
 
 Cancel Booking
 
@@ -101,6 +101,7 @@ Cancel Booking
 
 ```python
 import event_sdk
+from event_sdk.models.booking_cancellation import BookingCancellation
 from event_sdk.rest import ApiException
 from pprint import pprint
 
@@ -126,10 +127,11 @@ with event_sdk.ApiClient(configuration) as api_client:
     api_instance = event_sdk.BookingsApi(api_client)
     booking_id = 56 # int | 
     quantity = 56 # int |  (optional)
+    booking_cancellation = event_sdk.BookingCancellation() # BookingCancellation |  (optional)
 
     try:
         # Cancel Booking
-        api_instance.cancel_booking_bookings_booking_id_delete(booking_id, quantity=quantity)
+        api_instance.cancel_booking_bookings_booking_id_delete(booking_id, quantity=quantity, booking_cancellation=booking_cancellation)
     except Exception as e:
         print("Exception when calling BookingsApi->cancel_booking_bookings_booking_id_delete: %s\n" % e)
 ```
@@ -143,6 +145,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **booking_id** | **int**|  | 
  **quantity** | **int**|  | [optional] 
+ **booking_cancellation** | [**BookingCancellation**](BookingCancellation.md)|  | [optional]
 
 ### Return type
 
@@ -154,7 +157,7 @@ void (empty response body)
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
+ - **Content-Type**: application/json
  - **Accept**: application/json
 
 ### HTTP response details
@@ -314,4 +317,3 @@ This endpoint does not need any parameter.
 **200** | Successful Response |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-

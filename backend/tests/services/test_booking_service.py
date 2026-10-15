@@ -101,14 +101,21 @@ def test_partial_booking_cancellation_keeps_remaining_seats_reserved(
             db, future_event_data("Partially cancelable event", 5), creator.id
         )
         booking = booking_service.book_event(
-            db, event.id, attendee.id, attendee.name, quantity=4
+            db,
+            event.id,
+            attendee.id,
+            attendee.name,
+            quantity=4,
+            attendee_names=["First", "Second", "Third", "Fourth"],
         )
         event_id = event.id
         booking_id = booking.id
         attendee_id = attendee.id
 
     with test_session_factory() as db:
-        booking_service.cancel_booking(db, booking_id, attendee_id, quantity=2)
+        booking_service.cancel_booking(
+            db, booking_id, attendee_id, seat_numbers=[2, 4]
+        )
 
     with test_session_factory() as db:
         event = event_service.get_event(db, event_id)
@@ -117,6 +124,7 @@ def test_partial_booking_cancellation_keeps_remaining_seats_reserved(
         )[0]
         assert event.available_seats == 3
         assert remaining_booking.quantity == 2
+        assert remaining_booking.attendee_names == ["First", "Third"]
 
         booking_service.cancel_booking(db, booking_id, attendee_id, quantity=2)
         assert event.available_seats == 5
@@ -142,7 +150,9 @@ def test_cannot_cancel_more_seats_than_booking_quantity(test_session_factory):
 
     with test_session_factory() as db:
         with pytest.raises(InvalidCancellationQuantityError):
-            booking_service.cancel_booking(db, booking_id, attendee_id, quantity=3)
+            booking_service.cancel_booking(
+                db, booking_id, attendee_id, seat_numbers=[1, 2, 3]
+            )
 
     with test_session_factory() as db:
         event = event_service.get_event(db, event_id)

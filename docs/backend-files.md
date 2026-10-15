@@ -15,8 +15,8 @@ This guide explains the implemented files in `backend/`, what each one is respon
 
 - **`backend/app/db/database.py`** — Reads `DATABASE_URL`, loads local environment variables, creates the SQLAlchemy engine and session factory, and defines the shared declarative model base. SQLite connections are configured for FastAPI's threaded request handling and have foreign-key enforcement enabled.
 - **`backend/app/models/user.py`** and **`backend/app/models/auth_session.py`** — Define accounts and persisted token sessions. Session records support server-side logout/revocation and account deactivation.
-- **`backend/app/models/event.py`** — Defines event details, seat-count constraints, nullable creator ownership for historical records, and published/cancelled state.
-- **`backend/app/models/booking.py`** — Defines event bookings, booking timestamps, and nullable attendee ownership for historical records.
+- **`backend/app/models/event.py`** — Defines event details, optional venue address, seat-count constraints, nullable creator ownership for historical records, and published/cancelled state.
+- **`backend/app/models/booking.py`** — Defines event bookings, assigned seat numbers, attendee names, whether the attendee booked a seat for themselves, booking timestamps, and nullable attendee ownership for historical records.
 - **`backend/app/models/__init__.py`** — Exposes the models to Alembic metadata.
 
 The current database URL is set in `backend/.env.example`:
@@ -25,13 +25,13 @@ The current database URL is set in `backend/.env.example`:
 DATABASE_URL=sqlite:///./event_booking.db
 ```
 
-The relative SQLite path is resolved from the current working directory. Run Alembic and the application from `backend/`. Use `alembic upgrade head` to create or migrate the database; the application does not make schema changes at startup. The Alembic revisions add authentication and nullable ownership without assigning historical records to invented accounts. `backend/migrations/migrate_sqlite_schema.py` remains the one-time converter for the earlier `title`/`capacity` schema. SQLite does not retain timezone offsets, so event and booking timestamps are stored as UTC values.
+The relative SQLite path is resolved from the current working directory. Run Alembic and the application from `backend/`. Use `alembic upgrade head` to create or migrate the database; the application does not make schema changes at startup. The Alembic revisions add authentication, nullable ownership, booking seat data, and the optional event address without assigning historical records to invented accounts. `backend/migrations/migrate_sqlite_schema.py` remains the one-time converter for the earlier `title`/`capacity` schema. SQLite does not retain timezone offsets, so event and booking timestamps are stored as UTC values.
 
 ## Schemas: API input and output
 
 - **`backend/app/schemas/auth.py`** — Defines role-limited registration/login inputs, password policy, and safe account/token responses.
-- **`backend/app/schemas/event.py`** — Defines validated event creation, partial updates, and response schemas. Event dates require a timezone, and updates reject null values for required fields.
-- **`backend/app/schemas/booking.py`** — Defines booking, attendee booking-list, and creator booking response schemas.
+- **`backend/app/schemas/event.py`** — Defines validated event creation, partial updates, and response schemas, including optional `location`. Event dates require a timezone, and updates reject null values for required fields.
+- **`backend/app/schemas/booking.py`** — Defines booking requests with attendee names and self-booking choice, attendee booking-list responses, seat-number lists for cancellation, and creator booking responses.
 - **`backend/app/schemas/__init__.py`** — Re-exports the schema classes for convenient imports.
 
 These schemas keep external JSON contracts separate from database table definitions. FastAPI uses them both to validate requests and to describe the API in OpenAPI.
@@ -53,7 +53,7 @@ Repositories contain persistence operations, not HTTP response handling. This le
 - **`backend/app/services/exceptions.py`** — Defines domain errors that endpoint handlers translate into HTTP responses.
 - **`backend/app/services/__init__.py`** — Package marker for service modules.
 
-The conditional update is important for enforcing capacity: the seat check and decrement happen in the database as one operation instead of relying on a separate read followed by a write.
+The conditional update is important for enforcing capacity: the seat check and decrement happen in the database as one operation instead of relying on a separate read followed by a write. Booking service rules also limit each account to one self ticket per event while allowing guest-only bookings. Seat numbers are assigned to active tickets, and cancellation releases selected numbers for reuse.
 
 ## Tests and project configuration
 
@@ -76,7 +76,7 @@ For `POST /events/{event_id}/book`, the request follows this path:
 
 1. **Authentication dependency** (`api/dependencies.py`) validates the bearer JWT, persisted session, and active account; role dependencies ensure the caller is an attendee.
 2. **Endpoint** (`api/v1/endpoints/bookings.py`) receives the event ID and request-scoped session. The account ID and name come from the authenticated user, not the request body.
-3. **Service** (`services/booking_service.py`) applies booking rules and asks the repository to reserve one seat.
+3. **Service** (`services/booking_service.py`) applies booking rules, reserves the requested quantity, checks the one-self-ticket-per-event rule, and assigns available seat numbers.
 4. **Repository** (`repositories/booking_repository.py`) conditionally decrements `available_seats` only for a published future event with capacity remaining. This prevents two concurrent requests from reserving the same last seat.
 5. If no seat was reserved, the service distinguishes a missing, cancelled, started, or full event and raises the corresponding domain error. The endpoint returns the matching `4xx` response.
 6. If a seat was reserved, the repository captures the application system clock in UTC and creates the booking before commit. If booking creation fails, the seat decrement is rolled back.

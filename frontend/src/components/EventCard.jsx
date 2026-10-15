@@ -61,6 +61,9 @@ export default function EventCard({
         <p className="event-card__description">
           {event.description || "A good gathering starts with showing up."}
         </p>
+        {event.location && (
+          <p className="event-card__location">⌖ {event.location}</p>
+        )}
 
         <div className="event-card__availability">
           <div className="availability__label">

@@ -17,7 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from typing_extensions import Annotated
 from typing import Optional, Set
@@ -29,7 +29,9 @@ class BookingCreate(BaseModel):
     BookingCreate
     """ # noqa: E501
     quantity: Optional[Annotated[int, Field(strict=True, ge=1)]] = 1
-    __properties: ClassVar[List[str]] = ["quantity"]
+    attendee_names: Optional[List[StrictStr]] = None
+    includes_booker: StrictBool = True
+    __properties: ClassVar[List[str]] = ["quantity", "attendee_names", "includes_booker"]
 
     model_config = ConfigDict(
         validate_by_name=True,
@@ -70,6 +72,11 @@ class BookingCreate(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # set to None if attendee_names (nullable) is None
+        # and model_fields_set contains the field
+        if self.attendee_names is None and "attendee_names" in self.model_fields_set:
+            _dict['attendee_names'] = None
+
         return _dict
 
     @classmethod
@@ -82,7 +89,9 @@ class BookingCreate(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "quantity": obj.get("quantity") if obj.get("quantity") is not None else 1
+            "quantity": obj.get("quantity") if obj.get("quantity") is not None else 1,
+            "attendee_names": obj.get("attendee_names"),
+            "includes_booker": obj.get("includes_booker", True),
         })
         return _obj
 

@@ -96,14 +96,19 @@ export default function DiscoveryPage() {
     });
   }, [events, filter, query]);
 
-  async function handleBook(quantity) {
+  async function handleBook(quantity, attendeeNames, includesBooker) {
     if (!selectedEvent) return;
     const event = selectedEvent;
     setIsSaving(true);
     setActionError("");
     setNotice("");
     try {
-      const booking = await bookEvent(event.id, quantity);
+      const booking = await bookEvent(
+        event.id,
+        quantity,
+        attendeeNames,
+        includesBooker,
+      );
       setSelectedEvent(null);
       setNotice(
         `You’re in! Booking #${booking.id} for ${booking.quantity} ${
@@ -121,19 +126,22 @@ export default function DiscoveryPage() {
     }
   }
 
-  async function confirmCancelBooking(quantity) {
+  async function confirmCancelBooking(seatNumbers) {
     if (!bookingToCancel) return;
     const booking = bookingToCancel;
-    const remainingQuantity = (booking.quantity ?? 1) - quantity;
+    const cancelledQuantity = seatNumbers.length;
+    const remainingQuantity = (booking.quantity ?? 1) - cancelledQuantity;
     setCancellingBookingId(booking.id);
     setCancellationError("");
     setActionError("");
     setNotice("");
     try {
-      await cancelBooking(booking.id, quantity);
+      await cancelBooking(booking.id, seatNumbers);
       setBookingToCancel(null);
       setNotice(
-        `${quantity} ${quantity === 1 ? "seat has" : "seats have"} been cancelled from booking #${booking.id}. ${
+        `${cancelledQuantity} ${
+          cancelledQuantity === 1 ? "seat has" : "seats have"
+        } been cancelled from booking #${booking.id}. ${
           remainingQuantity > 0
             ? `${remainingQuantity} ${
                 remainingQuantity === 1 ? "seat remains" : "seats remain"

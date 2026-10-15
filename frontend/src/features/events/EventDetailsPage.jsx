@@ -35,7 +35,7 @@ export default function EventDetailsPage() {
     void loadEvent();
   }, [eventId]);
 
-  async function confirmBooking(quantity) {
+  async function confirmBooking(quantity, attendeeNames, includesBooker) {
     if (!event || isBooking) return;
     if (!user) {
       navigate("/login", { state: { from: { pathname: `/events/${eventId}` } } });
@@ -49,7 +49,12 @@ export default function EventDetailsPage() {
     setError("");
     let booking;
     try {
-      booking = await bookEvent(event.id, quantity);
+      booking = await bookEvent(
+        event.id,
+        quantity,
+        attendeeNames,
+        includesBooker,
+      );
       setShowBookingDialog(false);
       setNotice(
         `Booking #${booking.id} for ${booking.quantity} ${
@@ -96,6 +101,10 @@ export default function EventDetailsPage() {
             <p className="event-detail__date">{formatEventDate(event.date)}</p>
             <p className="event-detail__description">
               {event.description || "A good gathering starts with showing up."}
+            </p>
+            <p className="event-detail__location">
+              <strong>Location</strong>
+              <span>{event.location || "Location to be announced"}</span>
             </p>
             <div className="dashboard-stats">
               <div className="dashboard-stat">

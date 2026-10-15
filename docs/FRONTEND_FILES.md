@@ -1,91 +1,86 @@
 # Frontend Files: Purpose and Data Flow
 
-This guide describes the React frontend files, what they do, and how the interface talks to the FastAPI backend. The frontend uses Axios for all event and booking API operations; it never opens or reads the SQLite database directly.
+The React frontend uses Axios to call FastAPI for event, account, and booking
+data. It does not access SQLite directly. Run `npm install` and `npm run dev`
+from `frontend/`; see [the frontend guide](../frontend/README.md) for setup,
+configuration, roles, and features.
 
-## Application startup and page
+## Application and API access
 
-- **`index.html`** — Vite's HTML entry document. It provides the page metadata and the root element where React mounts.
-- **`src/main.jsx`** — Creates the React root, renders the application in `React.StrictMode`, and imports the global stylesheet.
-- **`src/app/App.jsx`** — The top-level screen and UI coordinator. It composes the header, discovery hero, event filters/search, event cards, booking sections, and confirmation dialogs. It invokes the event and booking hooks/API functions, handles success and error messages, and refreshes event data after a booking or cancellation.
-- **`src/styles.css`** — Global design tokens, responsive layout, event cards, buttons, status messages, loading skeletons, booking form, and the Gather-styled booking/cancellation dialogs. It includes reduced-motion and mobile layout rules.
+- **`src/main.jsx`** mounts the React application and global styles.
+- **`src/app/App.jsx`** defines public and role-protected routes.
+- **`src/api/client.js`** configures Axios and user-facing API error handling.
+- **`src/features/auth/AuthProvider.jsx`** manages the short-lived access token
+  in tab-scoped `sessionStorage` and restores the account through `/auth/me`.
+- **`src/features/auth/RoleRoute.jsx`** protects attendee and creator pages;
+  the API remains responsible for final authorization.
 
-## API access
+## Events
 
-- **`src/api/client.js`** — Creates the shared Axios client with a configurable API base URL, request timeout, and JSON headers. It also converts backend/API failures into readable user-facing messages.
-- **`src/features/events/eventApi.js`** — Contains the HTTP operations:
-  - `fetchEvents()` calls `GET /events/`.
-  - `bookEvent()` calls `POST /events/{event_id}/book` with the required `user_name`.
-  - `cancelBooking()` calls `DELETE /bookings/{booking_id}`.
+- **`src/features/events/eventApi.js`** contains event API calls for public
+  discovery and details, creation and updates, creator events, cancellations,
+  and creator-only event bookings.
+- **`src/features/events/useEvents.js`** loads and refreshes public event data
+  and seat availability.
+- **`src/features/events/EventForm.jsx`** validates and submits event name,
+  description, date/time, capacity, and optional venue address. The same form
+  supports event creation and creator edits.
+- **`src/features/events/CreateEventPage.jsx`** hosts creator event creation.
+- **`src/features/events/EventDetailsPage.jsx`** shows event details and
+  location, opens the booking dialog, and refreshes after booking.
+- **`src/components/EventCard.jsx`** shows discovery information, including
+  the optional address and current seat availability.
+- **`src/features/events/CreatorDashboard.jsx`** shows owned events, supports
+  edits and cancellation, lists attendee seats, and starts the Excel export.
+- **`src/features/events/exportEventBookings.js`** creates a workbook with one
+  row per attendee seat, including seat number and booking reference.
 
-Keep HTTP request code in this API layer rather than adding database access or fetch logic to visual components.
+## Bookings and attendee account
 
-## Events feature
+- **`src/features/bookings/BookingDialog.jsx`** lets an attendee choose the
+  number of seats, enter a name for each, choose whether one seat is for their
+  own account, and confirm the assignment before the API request.
+- **`src/features/bookings/AttendeeDashboard.jsx`** loads the attendee's
+  server-side booking history.
+- **`src/features/bookings/MyBookings.jsx`** displays bookings and individual
+  seat numbers and names.
+- **`src/features/bookings/CancelBookingDialog.jsx`** confirms full or selected
+  seat cancellation before calling the API.
 
-- **`src/features/events/useEvents.js`** — Loads event data, exposes loading/refresh/error state, prevents overlapping refresh calls, and updates availability every 15 seconds while the page is visible. It also refreshes when the tab becomes visible again and cleans up its timer/listener on unmount.
-- **`src/components/EventCard.jsx`** — Displays an event's name, description, scheduled date/time, total seats, remaining seats, and booking progress. It disables booking for sold-out events and calls a parent callback when the user chooses to book.
-
-The event date is the scheduled event time; seat availability comes from the API and is refreshed on a timer, tab focus, manual refresh, and after booking/cancellation. This is periodic polling (near-real-time), not a server push/WebSocket connection.
-
-## Booking feature
-
-- **`src/features/bookings/BookingDialog.jsx`** — Shows a form for the attendee name before submitting a booking. It focuses the name field when opened and can be dismissed with Escape, the close button, or clicking outside unless a booking is being submitted.
-- **`src/features/bookings/CancelBookingDialog.jsx`** — Shows an in-site, Gather-styled confirmation popup instead of the browser's native `window.confirm`. Users can keep the booking or confirm cancellation. While the request is in progress, its controls are disabled; a failed cancellation is shown within the dialog. Escape, the close button, and clicking outside dismiss the dialog when no request is running.
-- **`src/features/bookings/MyBookings.jsx`** — Renders this browser's saved bookings and lets a user open the cancellation confirmation dialog.
-- **`src/features/bookings/useSavedBookings.js`** — Validates and stores booking IDs and display data in `localStorage` under `gather.saved-bookings.v1`.
-
-The backend currently has no API for listing bookings by attendee. As a result, the My bookings list only includes bookings made in the same browser profile. Clearing browser storage removes this shortcut list, although it does not delete bookings from the server. Keep a booking ID if browser data may be cleared.
-
-## Tests and tooling
-
-- **`src/app/App.test.jsx`** — Component tests for loading events, booking, cancellation, dismissal and failure of the cancellation dialog, availability refresh, and the search keyboard shortcut. API operations are mocked so these tests do not modify the backend database.
-- **`src/testSetup.js`** — Configures the test `localStorage` implementation and testing-library cleanup.
-- **`vite.config.js`** — Configures React's Vite plugin, the local development server, and Vitest's jsdom test environment.
-- **`package.json`** — Lists React, Axios, Vite, and test dependencies and the `dev`, `build`, `preview`, and test scripts.
-- **`package-lock.json`** — Locks installed npm dependency versions to make installs reproducible.
-- **`.env.example`** — Documents `VITE_API_BASE_URL`; copy it to `.env` to change the backend URL for local development.
-- **`README.md`** — Quick-start commands, frontend features, environment setup, and validation commands.
-- **`public/`** — Static files served directly by Vite; it is currently empty apart from its `.gitkeep`.
-- **`tests/`** — Reserved for tests that are separate from the co-located `src/app/App.test.jsx`.
+The backend enforces one self ticket per attendee per event. The attendee can
+still make guest-only bookings. Cancellation releases only the selected seats;
+the API then refreshes the event's availability.
 
 ## Request flows
 
-### Load events and availability
+### Create or edit an event
 
-1. `src/main.jsx` mounts `App`.
-2. `App` calls `useEvents()`, which calls `fetchEvents()`.
-3. `eventApi.js` sends the request through the shared Axios client in `src/api/client.js`.
-4. The backend returns the event list; `useEvents` stores it in React state.
-5. `EventCard` displays the current counts. The hook repeats the request every 15 seconds while visible, or when the user requests a refresh.
+1. A creator opens the creation page or chooses to edit an owned event.
+2. `EventForm.jsx` validates the fields and sends an optional `location` with
+   the event data.
+3. `eventApi.js` sends `POST /events/` or `PATCH /events/{event_id}`.
+4. The API validates and saves the event; event cards and detail pages display
+   the returned address when present.
 
-### Make a booking
+### Book seats
 
-1. The user selects an event on its event card.
-2. `BookingDialog` collects the required name.
-3. `App` calls `bookEvent(event.id, userName)`.
-4. On success, the frontend saves the returned booking ID and display details in `localStorage`, displays a success message, and refreshes event availability.
-5. If the event filled before the request arrived, the backend's `409 Conflict` is shown as an error and availability is refreshed.
+1. An attendee opens an event and selects **Book a spot**.
+2. `BookingDialog.jsx` collects attendee names and the self-booking choice.
+3. `eventApi.js` sends the confirmed seat quantity, attendee names, and
+   `includes_booker` value to `POST /events/{event_id}/book`.
+4. The API reserves capacity, assigns distinct event seat numbers, and enforces
+   the one-self-ticket-per-event rule.
+5. The frontend reloads event availability and the attendee booking history.
 
-### Cancel a booking
+### View and export event bookings
 
-1. The user chooses **Cancel** from a saved item in **My bookings**.
-2. `CancelBookingDialog` asks for confirmation inside the site UI. Dismissing it makes no API request.
-3. On confirmation, `App` calls `cancelBooking(booking.id)`.
-4. If the API succeeds, the browser removes that booking from its saved list, displays confirmation, and refreshes availability.
-5. If the API returns an error, the booking remains saved and the error appears in the confirmation popup.
+1. A creator opens **View bookings** for an event they own.
+2. The dashboard fetches `GET /creator/events/{event_id}/bookings` and renders
+   each attendee seat as a separate row.
+3. The Excel export uses the same booking response and includes one row for
+   each seat.
 
-## Run and verify the frontend
+## Responsive design
 
-From `frontend/`:
-
-```bash
-npm install
-cp -n .env.example .env
-npm run dev
-```
-
-Run FastAPI separately from `backend/` and configure its `CORS_ORIGINS` to allow the frontend origin (by default, `http://127.0.0.1:5173` and `http://localhost:5173`).
-
-```bash
-npm test
-npm run build
-```
+**`src/styles.css`** contains the visual system, responsive layouts, form
+states, and accessible focus and reduced-motion styles.

@@ -28,6 +28,7 @@ def _validated_event_name(value: str) -> str:
 class EventCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     description: Optional[str] = Field(default=None, max_length=5000)
+    location: Optional[str] = Field(default=None, max_length=500)
     total_seats: int = Field(gt=0)
     date: datetime
 
@@ -35,6 +36,13 @@ class EventCreate(BaseModel):
     @classmethod
     def name_must_not_be_blank(cls, value: str) -> str:
         return _validated_event_name(value)
+
+    @field_validator("location")
+    @classmethod
+    def blank_location_is_none(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        return value.strip() or None
 
     @field_validator("date")
     @classmethod
@@ -47,6 +55,7 @@ class EventCreate(BaseModel):
 class EventUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=200)
     description: Optional[str] = Field(default=None, max_length=5000)
+    location: Optional[str] = Field(default=None, max_length=500)
     total_seats: Optional[int] = Field(default=None, gt=0)
     date: Optional[datetime] = None
 
@@ -56,6 +65,13 @@ class EventUpdate(BaseModel):
         if value is None:
             return value
         return _validated_event_name(value)
+
+    @field_validator("location")
+    @classmethod
+    def update_blank_location_is_none(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        return value.strip() or None
 
     @field_validator("date")
     @classmethod
@@ -87,6 +103,7 @@ class EventResponse(BaseModel):
     id: int
     name: str
     description: Optional[str]
+    location: Optional[str]
     total_seats: int
     available_seats: int
     date: datetime

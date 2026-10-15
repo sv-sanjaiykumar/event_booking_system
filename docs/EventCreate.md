@@ -7,6 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **name** | **str** |  | 
 **description** | **str** |  | [optional] 
+**location** | **str** | Venue address for the event. | [optional]
 **total_seats** | **int** |  | 
 **var_date** | **datetime** |  | 
 

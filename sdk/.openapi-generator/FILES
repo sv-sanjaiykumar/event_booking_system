@@ -4,6 +4,7 @@
 .travis.yml
 README.md
 docs/AuthenticationApi.md
+docs/BookingCancellation.md
 docs/BookingCreate.md
 docs/BookingResponse.md
 docs/BookingsApi.md
@@ -31,6 +32,7 @@ event_sdk/api_response.py
 event_sdk/configuration.py
 event_sdk/exceptions.py
 event_sdk/models/__init__.py
+event_sdk/models/booking_cancellation.py
 event_sdk/models/booking_create.py
 event_sdk/models/booking_response.py
 event_sdk/models/creator_booking_response.py
@@ -55,4 +57,5 @@ setup.cfg
 setup.py
 test-requirements.txt
 test/__init__.py
+test/test_booking_cancellation.py
 tox.ini

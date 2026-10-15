@@ -6,6 +6,10 @@ class EventSoldOutError(Exception):
     pass
 
 
+class AlreadyBookedAsSelfError(Exception):
+    pass
+
+
 class InsufficientSeatsError(Exception):
     pass
 

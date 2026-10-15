@@ -222,6 +222,54 @@ def test_booking_quantity_updates_and_restores_available_seats(client):
     ] == 2
 
 
+def test_booking_stores_individual_attendee_names(client):
+    _creator, creator_headers = register_user(client)
+    event = create_event(client, creator_headers, capacity=3)
+    attendee, attendee_headers = register_user(
+        client, role="attendee", email="named-seats@example.com", name="Ticket Buyer"
+    )
+
+    booking = client.post(
+        f"/events/{event['id']}/book",
+        headers=attendee_headers,
+        json={
+            "quantity": 2,
+            "attendee_names": ["Ticket Buyer", "Guest Person"],
+        },
+    )
+
+    assert booking.status_code == 201
+    assert booking.json()["user_name"] == attendee["name"]
+    assert booking.json()["quantity"] == 2
+    assert booking.json()["attendee_names"] == ["Ticket Buyer", "Guest Person"]
+    assert client.get("/bookings/me", headers=attendee_headers).json()[0][
+        "attendee_names"
+    ] == ["Ticket Buyer", "Guest Person"]
+
+
+def test_booking_rejects_missing_or_blank_attendee_names(client):
+    _creator, creator_headers = register_user(client)
+    event = create_event(client, creator_headers, capacity=3)
+    _attendee, attendee_headers = register_user(
+        client, role="attendee", email="invalid-seat-name@example.com"
+    )
+
+    missing_name = client.post(
+        f"/events/{event['id']}/book",
+        headers=attendee_headers,
+        json={"quantity": 2, "attendee_names": ["Attendee"]},
+    )
+    blank_name = client.post(
+        f"/events/{event['id']}/book",
+        headers=attendee_headers,
+        json={"quantity": 1, "attendee_names": ["   "]},
+    )
+
+    assert missing_name.status_code == 422
+    assert blank_name.status_code == 422
+    assert client.get(f"/events/{event['id']}").json()["available_seats"] == 3
+
+
 def test_booking_quantity_must_be_positive(client):
     _creator, creator_headers = register_user(client)
     event = create_event(client, creator_headers, capacity=5)
@@ -248,28 +296,39 @@ def test_partial_cancellation_only_releases_requested_seats(client):
     booking = client.post(
         f"/events/{event['id']}/book",
         headers=attendee_headers,
-        json={"quantity": 4},
+        json={
+            "quantity": 4,
+            "attendee_names": ["First", "Second", "Third", "Fourth"],
+        },
     )
     booking_id = booking.json()["id"]
 
-    partial_cancellation = client.delete(
-        f"/bookings/{booking_id}?quantity=2", headers=attendee_headers
+    partial_cancellation = client.request(
+        "DELETE",
+        f"/bookings/{booking_id}",
+        headers=attendee_headers,
+        json={"seat_numbers": [2, 4]},
     )
     remaining_booking = client.get(
         "/bookings/me", headers=attendee_headers
     ).json()[0]
     remaining_seats = client.get(f"/events/{event['id']}").json()["available_seats"]
-    excessive_cancellation = client.delete(
-        f"/bookings/{booking_id}?quantity=3", headers=attendee_headers
+    excessive_cancellation = client.request(
+        "DELETE",
+        f"/bookings/{booking_id}",
+        headers=attendee_headers,
+        json={"seat_numbers": [1, 1]},
     )
     full_cancellation = client.delete(
-        f"/bookings/{booking_id}?quantity=2", headers=attendee_headers
+        f"/bookings/{booking_id}",
+        headers=attendee_headers,
     )
 
     assert partial_cancellation.status_code == 204
     assert remaining_booking["quantity"] == 2
+    assert remaining_booking["attendee_names"] == ["First", "Third"]
     assert remaining_seats == 3
-    assert excessive_cancellation.status_code == 409
+    assert excessive_cancellation.status_code == 422
     assert full_cancellation.status_code == 204
     assert client.get(f"/events/{event['id']}").json()["available_seats"] == 5
     assert client.get("/bookings/me", headers=attendee_headers).json() == []

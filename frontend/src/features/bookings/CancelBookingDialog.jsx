@@ -10,7 +10,19 @@ export default function CancelBookingDialog({
   const keepButtonRef = useRef(null);
   const onCloseRef = useRef(onClose);
   const bookedQuantity = booking.quantity ?? 1;
-  const [quantity, setQuantity] = useState("1");
+  const attendeeNames =
+    booking.attendee_names?.length === bookedQuantity
+      ? booking.attendee_names
+      : Array(bookedQuantity).fill(booking.user_name);
+  const seatNumbers = booking.seat_numbers?.length === bookedQuantity
+    ? booking.seat_numbers
+    : Array.from({ length: bookedQuantity }, (_, index) => index + 1);
+  const [cancellationType, setCancellationType] = useState("full");
+  const [selectedSeatPositions, setSelectedSeatPositions] = useState([]);
+  const cancelledSeatNumbers =
+    cancellationType === "full"
+      ? Array.from({ length: bookedQuantity }, (_, index) => index + 1)
+      : selectedSeatPositions;
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -80,25 +92,71 @@ export default function CancelBookingDialog({
         <p className="cancel-dialog__event">{booking.event_name}</p>
         <p className="booking-dialog__date">{booking.event_date_label}</p>
         <p className="cancel-dialog__description" id="cancel-dialog-description">
-          Choose how many of your {bookedQuantity} booked{" "}
-          {bookedQuantity === 1 ? "seat" : "seats"} to cancel. Only the seats you
-          cancel will be released, and any remaining seats stay booked.
+          Choose whether to cancel the entire booking or only specific seats.
+          Cancelled seats will be returned to event availability.
         </p>
-        <label className="cancel-dialog__quantity-label" htmlFor="cancel-quantity">
-          Seats to cancel
-        </label>
-        <input
-          id="cancel-quantity"
-          className="cancel-dialog__quantity"
-          type="number"
-          min="1"
-          max={bookedQuantity}
-          step="1"
-          required
-          value={quantity}
-          onChange={(event) => setQuantity(event.target.value)}
-          disabled={isCancelling}
-        />
+        {bookedQuantity > 1 ? (
+          <fieldset className="cancel-dialog__options">
+            <legend>Cancellation type</legend>
+            <label>
+              <input
+                type="radio"
+                name={`cancellation-type-${booking.id}`}
+                value="full"
+                checked={cancellationType === "full"}
+                onChange={() => setCancellationType("full")}
+                disabled={isCancelling}
+              />
+              Cancel all {bookedQuantity} seats
+            </label>
+            <label>
+              <input
+                type="radio"
+                name={`cancellation-type-${booking.id}`}
+                value="partial"
+                checked={cancellationType === "partial"}
+                onChange={() => setCancellationType("partial")}
+                disabled={isCancelling}
+              />
+              Cancel specific seats
+            </label>
+          </fieldset>
+        ) : (
+          <p className="cancel-dialog__seat-summary">
+            Seat {seatNumbers[0]}: {attendeeNames[0]}
+          </p>
+        )}
+        {cancellationType === "partial" && (
+          <fieldset className="cancel-dialog__options cancel-dialog__seat-options">
+            <legend>Select seats to cancel</legend>
+            {attendeeNames.map((name, index) => {
+              const seatPosition = index + 1;
+              const seatNumber = seatNumbers[index];
+              return (
+                <label key={seatNumber}>
+                  <input
+                    type="checkbox"
+                    checked={selectedSeatPositions.includes(seatPosition)}
+                    onChange={(event) => {
+                      setSelectedSeatPositions((current) =>
+                        event.target.checked
+                          ? [...current, seatPosition]
+                          : current.filter((selected) => selected !== seatPosition),
+                      );
+                    }}
+                    disabled={isCancelling}
+                  />
+                  Seat {seatNumber}: {name}
+                </label>
+              );
+            })}
+            {selectedSeatPositions.length === bookedQuantity && (
+              <p className="field-hint">
+                To cancel every seat, choose “Cancel all seats” above.
+              </p>
+            )}
+          </fieldset>
+        )}
         {error && (
           <p className="cancel-dialog__error" role="alert">
             {error}
@@ -119,15 +177,17 @@ export default function CancelBookingDialog({
             type="button"
             disabled={
               isCancelling ||
-              !Number.isInteger(Number(quantity)) ||
-              Number(quantity) < 1 ||
-              Number(quantity) > bookedQuantity
+              cancelledSeatNumbers.length === 0 ||
+              (cancellationType === "partial" &&
+                cancelledSeatNumbers.length >= bookedQuantity)
             }
-            onClick={() => onConfirm(Number(quantity))}
+            onClick={() => onConfirm(cancelledSeatNumbers)}
           >
             {isCancelling
               ? "Cancelling…"
-              : `Cancel ${quantity} ${Number(quantity) === 1 ? "seat" : "seats"}`}
+              : `Confirm cancellation of ${cancelledSeatNumbers.length} ${
+                  cancelledSeatNumbers.length === 1 ? "seat" : "seats"
+                }`}
           </button>
         </div>
       </section>

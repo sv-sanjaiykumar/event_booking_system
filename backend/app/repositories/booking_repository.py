@@ -25,13 +25,23 @@ def reserve_seats(
 
 
 def create_booking(
-    db: Session, event_id: int, user_id: int, user_name: str, quantity: int
+    db: Session,
+    event_id: int,
+    user_id: int,
+    user_name: str,
+    quantity: int,
+    attendee_names: list[str],
+    seat_numbers: list[int],
+    includes_booker: bool,
 ) -> Booking:
     booking = Booking(
         event_id=event_id,
         user_id=user_id,
         user_name=user_name,
         quantity=quantity,
+        attendee_names=attendee_names,
+        seat_numbers=seat_numbers,
+        includes_booker=includes_booker,
         booking_date=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     db.add(booking)
@@ -86,33 +96,78 @@ def list_event_bookings(
     )
 
 
+def list_event_seat_numbers(db: Session, event_id: int) -> list[int]:
+    bookings = db.scalars(
+        select(Booking.seat_numbers).where(Booking.event_id == event_id)
+    )
+    return [seat_number for numbers in bookings for seat_number in (numbers or [])]
+
+
+def user_has_booked_self_for_event(
+    db: Session, event_id: int, user_id: int
+) -> bool:
+    return db.scalar(
+        select(Booking.id)
+        .where(
+            Booking.event_id == event_id,
+            Booking.user_id == user_id,
+            Booking.includes_booker.is_(True),
+        )
+        .limit(1)
+    ) is not None
+
+
 def delete_booking(
-    db: Session, booking_id: int, user_id: int, quantity: int
+    db: Session,
+    booking_id: int,
+    user_id: int,
+    quantity: int,
+    attendee_names: list[str],
+    seat_numbers: list[int],
 ) -> int:
     result = db.execute(
         delete(Booking).where(
             Booking.id == booking_id,
             Booking.user_id == user_id,
             Booking.quantity == quantity,
+            Booking.attendee_names == attendee_names,
+            Booking.seat_numbers == seat_numbers,
         )
     )
     return result.rowcount or 0
 
 
 def cancel_booking_seats(
-    db: Session, booking_id: int, user_id: int, quantity: int
-) -> Optional[int]:
+    db: Session,
+    booking_id: int,
+    user_id: int,
+    quantity: int,
+    expected_quantity: int,
+    expected_attendee_names: list[str],
+    remaining_attendee_names: list[str],
+    expected_seat_numbers: list[int],
+    remaining_seat_numbers: list[int],
+    expected_includes_booker: bool,
+    remaining_includes_booker: bool,
+) -> int:
     result = db.execute(
         update(Booking)
         .where(
             Booking.id == booking_id,
             Booking.user_id == user_id,
-            Booking.quantity > quantity,
+            Booking.quantity == expected_quantity,
+            Booking.attendee_names == expected_attendee_names,
+            Booking.seat_numbers == expected_seat_numbers,
+            Booking.includes_booker.is_(expected_includes_booker),
         )
-        .values(quantity=Booking.quantity - quantity)
-        .returning(Booking.quantity)
+        .values(
+            quantity=expected_quantity - quantity,
+            attendee_names=remaining_attendee_names,
+            seat_numbers=remaining_seat_numbers,
+            includes_booker=remaining_includes_booker,
+        )
     )
-    return result.scalar_one_or_none()
+    return result.rowcount or 0
 
 
 def release_seats(db: Session, event_id: int, quantity: int) -> int:

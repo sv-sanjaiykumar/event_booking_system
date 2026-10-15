@@ -9,14 +9,23 @@ export async function fetchEvent(eventId) {
   return data;
 }
 
-export async function bookEvent(eventId, quantity = 1) {
-  const { data } = await apiClient.post(`/events/${eventId}/book`, { quantity });
+export async function bookEvent(
+  eventId,
+  quantity = 1,
+  attendeeNames,
+  includesBooker = true,
+) {
+  const { data } = await apiClient.post(`/events/${eventId}/book`, {
+    quantity,
+    attendee_names: attendeeNames,
+    includes_booker: includesBooker,
+  });
   return data;
 }
 
-export async function cancelBooking(bookingId, quantity) {
+export async function cancelBooking(bookingId, seatNumbers) {
   await apiClient.delete(`/bookings/${bookingId}`, {
-    params: quantity === undefined ? undefined : { quantity },
+    data: seatNumbers === undefined ? undefined : { seat_numbers: seatNumbers },
   });
 }
 

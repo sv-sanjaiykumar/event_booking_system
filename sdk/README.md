@@ -117,6 +117,7 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [BookingCancellation](docs/BookingCancellation.md)
  - [BookingCreate](docs/BookingCreate.md)
  - [BookingResponse](docs/BookingResponse.md)
  - [CreatorBookingResponse](docs/CreatorBookingResponse.md)

@@ -89,7 +89,7 @@ describe("public event discovery", () => {
     fireEvent.click(screen.getByRole("button", { name: "Yes, book 1 seat" }));
 
     expect(await screen.findByText(/booking #24 for 1 seat is confirmed/i)).toBeInTheDocument();
-    expect(bookEvent).toHaveBeenCalledWith(event.id, 1);
+    expect(bookEvent).toHaveBeenCalledWith(event.id, 1, ["Alex Morgan"]);
     expect(fetchMyBookings).toHaveBeenCalled();
     expect(await screen.findByText("2 spots left")).toBeInTheDocument();
   });
@@ -106,14 +106,31 @@ describe("public event discovery", () => {
     fireEvent.change(seatQuantity, {
       target: { value: "2" },
     });
+    fireEvent.change(screen.getByLabelText("Seat 2 · Guest"), {
+      target: { value: "Taylor Guest" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /review booking/i }));
     expect(bookEvent).not.toHaveBeenCalled();
     expect(screen.getByRole("status")).toHaveTextContent("about to book 2 seats");
     fireEvent.click(screen.getByRole("button", { name: "Yes, book 2 seats" }));
 
     expect(await screen.findByText(/booking #24 for 2 seats is confirmed/i)).toBeInTheDocument();
-    expect(bookEvent).toHaveBeenCalledWith(event.id, 2);
+    expect(bookEvent).toHaveBeenCalledWith(event.id, 2, ["Alex Morgan", "Taylor Guest"]);
     expect(await screen.findByRole("button", { name: "Join next time" })).toBeInTheDocument();
+  });
+
+  it("prefills the booker name and allows them to change it", async () => {
+    renderDiscovery();
+
+    fireEvent.click(await screen.findByRole("button", { name: /book your last spot/i }));
+    const attendeeName = screen.getByLabelText("Seat 1 · You or guest");
+    expect(attendeeName).toHaveValue("Alex Morgan");
+    fireEvent.change(attendeeName, { target: { value: "Alex Guest" } });
+    fireEvent.click(screen.getByRole("button", { name: /review booking/i }));
+    expect(screen.getByText("Seat 1: Alex Guest")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Yes, book 1 seat" }));
+
+    expect(bookEvent).toHaveBeenCalledWith(event.id, 1, ["Alex Guest"]);
   });
 
   it("does not create a booking when the confirmation step is dismissed", async () => {
@@ -143,9 +160,9 @@ describe("public event discovery", () => {
       await screen.findByRole("alertdialog", { name: "Cancel this booking?" }),
     ).toBeInTheDocument();
     expect(cancelBooking).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Cancel 1 seat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation of 1 seat" }));
 
-    expect(cancelBooking).toHaveBeenCalledWith(24, 1);
+    expect(cancelBooking).toHaveBeenCalledWith(24, [1]);
     expect(await screen.findByText(/has been cancelled/i)).toBeInTheDocument();
     await waitFor(() => expect(fetchMyBookings).toHaveBeenCalledTimes(2));
     expect(document.querySelector(".booking-list li")).toBeNull();
@@ -173,7 +190,7 @@ describe("public event discovery", () => {
 
     const bookingReference = await screen.findByText(/Booking #24/);
     fireEvent.click(within(bookingReference.closest("li")).getByRole("button", { name: "Cancel" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Cancel 1 seat" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Confirm cancellation of 1 seat" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Booking not found.");
     expect(screen.getByRole("alertdialog")).toBeInTheDocument();
@@ -181,7 +198,11 @@ describe("public event discovery", () => {
   });
 
   it("cancels only the selected seats and keeps the rest of the booking", async () => {
-    const multiSeatBooking = { ...booking, quantity: 3 };
+    const multiSeatBooking = {
+      ...booking,
+      quantity: 3,
+      attendee_names: ["Alex Morgan", "Taylor Guest", "Jordan Guest"],
+    };
     fetchMyBookings
       .mockResolvedValueOnce([multiSeatBooking])
       .mockResolvedValueOnce([{ ...multiSeatBooking, quantity: 1 }]);
@@ -189,15 +210,33 @@ describe("public event discovery", () => {
 
     const bookingReference = await screen.findByText(/Booking #24/);
     fireEvent.click(within(bookingReference.closest("li")).getByRole("button", { name: "Cancel" }));
-    const quantityInput = screen.getByRole("spinbutton", { name: "Seats to cancel" });
-    expect(quantityInput).toHaveAttribute("max", "3");
-    fireEvent.change(quantityInput, { target: { value: "2" } });
-    fireEvent.click(screen.getByRole("button", { name: "Cancel 2 seats" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Cancel specific seats" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Seat 2: Taylor Guest" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Seat 3: Jordan Guest" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation of 2 seats" }));
 
-    expect(cancelBooking).toHaveBeenCalledWith(24, 2);
+    expect(cancelBooking).toHaveBeenCalledWith(24, [2, 3]);
     expect(await screen.findByText(/2 seats have been cancelled from booking #24/i)).toBeInTheDocument();
-    expect(await screen.findByText("1 seat booked")).toBeInTheDocument();
+    expect(await screen.findByText(/1 seat booked/)).toBeInTheDocument();
+    expect(screen.getByText(/Seat 1: Alex Morgan/)).toBeInTheDocument();
     expect(screen.getByText(/Booking #24/)).toBeInTheDocument();
+  });
+
+  it("offers full cancellation for all named seats in a booking", async () => {
+    const multiSeatBooking = {
+      ...booking,
+      quantity: 2,
+      attendee_names: ["Alex Morgan", "Taylor Guest"],
+    };
+    fetchMyBookings.mockResolvedValueOnce([multiSeatBooking]);
+    renderDiscovery();
+
+    const bookingReference = await screen.findByText(/Booking #24/);
+    fireEvent.click(within(bookingReference.closest("li")).getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("radio", { name: "Cancel all 2 seats" })).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm cancellation of 2 seats" }));
+
+    expect(cancelBooking).toHaveBeenCalledWith(24, [1, 2]);
   });
 
   it("routes unauthenticated attendees to sign-in before booking", async () => {

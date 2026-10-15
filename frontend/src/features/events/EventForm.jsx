@@ -28,6 +28,7 @@ function eventPayload(formData) {
   return {
     name: eventName,
     description: formData.description.trim() || null,
+    location: formData.location.trim() || null,
     total_seats: totalSeats,
     date: date.toISOString(),
   };
@@ -42,6 +43,7 @@ function toLocalDateTime(value) {
 export default function EventForm({ initial = {}, submitLabel, onSubmit, onCancel }) {
   const [name, setName] = useState(initial.name || "");
   const [description, setDescription] = useState(initial.description || "");
+  const [location, setLocation] = useState(initial.location || "");
   const [date, setDate] = useState(
     initial.date ? toLocalDateTime(initial.date) : "",
   );
@@ -63,6 +65,7 @@ export default function EventForm({ initial = {}, submitLabel, onSubmit, onCance
       payload = eventPayload({
         name,
         description,
+        location,
         date,
         total_seats: totalSeats,
       });
@@ -110,6 +113,18 @@ export default function EventForm({ initial = {}, submitLabel, onSubmit, onCance
         value={description}
         onChange={(event) => setDescription(event.target.value)}
       />
+      <label htmlFor={fieldId("location")}>Event address</label>
+      <textarea
+        id={fieldId("location")}
+        maxLength={500}
+        rows={2}
+        placeholder="Venue name, street address, city"
+        value={location}
+        onChange={(event) => setLocation(event.target.value)}
+      />
+      <p className="field-hint">
+        Add the venue name and address so attendees know where to go.
+      </p>
       <label htmlFor={fieldId("date")}>Event date and time</label>
       <input
         id={fieldId("date")}

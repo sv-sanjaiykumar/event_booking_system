@@ -15,6 +15,7 @@ def create_event(db: Session, event_data: EventCreate, creator_id: int) -> Event
         creator_id=creator_id,
         name=event_data.name,
         description=event_data.description,
+        location=event_data.location,
         total_seats=event_data.total_seats,
         available_seats=event_data.total_seats,
         date=event_data.date.astimezone(timezone.utc).replace(tzinfo=None),

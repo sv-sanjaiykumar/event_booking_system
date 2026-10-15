@@ -31,11 +31,12 @@ class EventResponse(BaseModel):
     id: StrictInt
     name: StrictStr
     description: Optional[StrictStr]
+    location: Optional[StrictStr]
     total_seats: StrictInt
     available_seats: StrictInt
     var_date: datetime = Field(alias="date")
     status: StrictStr
-    __properties: ClassVar[List[str]] = ["id", "name", "description", "total_seats", "available_seats", "date", "status"]
+    __properties: ClassVar[List[str]] = ["id", "name", "description", "location", "total_seats", "available_seats", "date", "status"]
 
     model_config = ConfigDict(
         validate_by_name=True,
@@ -80,6 +81,8 @@ class EventResponse(BaseModel):
         # and model_fields_set contains the field
         if self.description is None and "description" in self.model_fields_set:
             _dict['description'] = None
+        if self.location is None and "location" in self.model_fields_set:
+            _dict['location'] = None
 
         return _dict
 
@@ -96,6 +99,7 @@ class EventResponse(BaseModel):
             "id": obj.get("id"),
             "name": obj.get("name"),
             "description": obj.get("description"),
+            "location": obj.get("location"),
             "total_seats": obj.get("total_seats"),
             "available_seats": obj.get("available_seats"),
             "date": obj.get("date"),

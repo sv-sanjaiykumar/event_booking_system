@@ -6,6 +6,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **quantity** | **int** |  | [optional] [default to 1]
+**attendee_names** | **List[str]** |  | [optional]
+**includes_booker** | **bool** | Whether the signed-in attendee is included as one of the seat holders. | [optional] [default to True]
 
 ## Example
 
@@ -25,5 +27,4 @@ booking_create_dict = booking_create_instance.to_dict()
 booking_create_from_dict = BookingCreate.from_dict(booking_create_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
 

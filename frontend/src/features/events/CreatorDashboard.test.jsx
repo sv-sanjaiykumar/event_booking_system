@@ -60,6 +60,8 @@ describe("creator dashboard", () => {
         id: 33,
         event_id: ownEvent.id,
         user_name: "Attendee Name",
+        quantity: 2,
+        attendee_names: ["Attendee Name", "Guest Name"],
         booking_date: "2026-10-14T03:00:00Z",
       },
       {
@@ -105,7 +107,8 @@ describe("creator dashboard", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: "View bookings (3)" }));
-    expect(await screen.findByText("Attendee Name")).toBeInTheDocument();
+    expect(await screen.findByText(/Booked by Attendee Name/)).toBeInTheDocument();
+    expect(screen.getByText(/Seat 2: Guest Name/)).toBeInTheDocument();
     expect(screen.getByText("Booking #33")).toBeInTheDocument();
     expect(screen.queryByText("attendee@example.com")).not.toBeInTheDocument();
   });

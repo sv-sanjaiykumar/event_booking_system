@@ -9,6 +9,9 @@ Name | Type | Description | Notes
 **event_id** | **int** |  | 
 **user_name** | **str** |  | 
 **quantity** | **int** |  | 
+**attendee_names** | **List[str]** |  |
+**seat_numbers** | **List[int]** | Event seat numbers assigned to this booking. |
+**includes_booker** | **bool** | Whether the signed-in attendee is one of the seat holders. |
 **booking_date** | **datetime** |  | 
 
 ## Example
@@ -29,5 +32,4 @@ booking_response_dict = booking_response_instance.to_dict()
 booking_response_from_dict = BookingResponse.from_dict(booking_response_dict)
 ```
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
 

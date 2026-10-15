@@ -15,6 +15,7 @@ describe("event attendee workbook", () => {
         id: 33,
         user_name: "Attendee Name",
         quantity: 3,
+        attendee_names: ["Attendee Name", "Guest One", "Guest Two"],
         booking_date: "2026-10-14T03:00:00Z",
       },
     ];
@@ -33,14 +34,18 @@ describe("event attendee workbook", () => {
     ]));
     expect(workbookXml).toContain('<sheet name="Attendees"');
     expect(worksheet).toContain("<t xml:space=\"preserve\">Garden Workshop</t>");
-    expect(worksheet).toContain("<t xml:space=\"preserve\">Attendee name</t>");
+    expect(worksheet).toContain("<t xml:space=\"preserve\">Booked by</t>");
+    expect(worksheet).toContain("<t xml:space=\"preserve\">Seat attendees</t>");
     expect(worksheet).toContain("<t xml:space=\"preserve\">Booking date (UTC)</t>");
     expect(worksheet).toContain("<t xml:space=\"preserve\">Attendee Name</t>");
+    expect(worksheet).toContain(
+      "Seat 1: Attendee Name | Seat 2: Guest One | Seat 3: Guest Two",
+    );
     expect(worksheet).toContain('<c r="B5"><v>33</v></c>');
     expect(worksheet).toContain("<t xml:space=\"preserve\">Seats</t>");
     expect(worksheet).toContain('<c r="C5"><v>3</v></c>');
-    expect(worksheet).toContain('r="D5" s="1"');
-    expect(worksheet).toContain('<autoFilter ref="A4:D5"/>');
+    expect(worksheet).toContain('r="E5" s="1"');
+    expect(worksheet).toContain('<autoFilter ref="A4:E5"/>');
   });
 
   it("escapes attendee text before putting it into worksheet XML", () => {

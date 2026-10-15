@@ -46,6 +46,7 @@ class Event(Base):
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     total_seats: Mapped[int] = mapped_column(Integer, nullable=False)
     available_seats: Mapped[int] = mapped_column(Integer, nullable=False)
     date: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)

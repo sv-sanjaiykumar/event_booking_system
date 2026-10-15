@@ -31,9 +31,10 @@ class EventCreate(BaseModel):
     """ # noqa: E501
     name: Annotated[str, Field(min_length=1, strict=True, max_length=200)]
     description: Optional[Annotated[str, Field(strict=True, max_length=5000)]] = None
+    location: Optional[Annotated[str, Field(strict=True, max_length=500)]] = None
     total_seats: Annotated[int, Field(strict=True, gt=0)]
     var_date: datetime = Field(alias="date")
-    __properties: ClassVar[List[str]] = ["name", "description", "total_seats", "date"]
+    __properties: ClassVar[List[str]] = ["name", "description", "location", "total_seats", "date"]
 
     model_config = ConfigDict(
         validate_by_name=True,
@@ -78,6 +79,8 @@ class EventCreate(BaseModel):
         # and model_fields_set contains the field
         if self.description is None and "description" in self.model_fields_set:
             _dict['description'] = None
+        if self.location is None and "location" in self.model_fields_set:
+            _dict['location'] = None
 
         return _dict
 
@@ -93,6 +96,7 @@ class EventCreate(BaseModel):
         _obj = cls.model_validate({
             "name": obj.get("name"),
             "description": obj.get("description"),
+            "location": obj.get("location"),
             "total_seats": obj.get("total_seats"),
             "date": obj.get("date")
         })

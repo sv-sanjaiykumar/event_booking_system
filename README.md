@@ -9,10 +9,17 @@ of their seats. Creators can manage events and view attendee bookings.
 
 - Public event discovery, search, event details, and live seat availability.
 - Attendee and creator registration with role-based access.
-- Creator event creation and management.
-- Multi-seat bookings with an explicit review and confirmation step.
-- Full or partial booking cancellation; only cancelled seats return to event
-  availability.
+- Creator event creation and management, including an optional venue address
+  that attendees can see on event cards and detail pages.
+- Multi-seat bookings with an editable attendee name assigned to each seat and
+  an explicit review and confirmation step. Each seat gets its own number, and
+  the same seat cannot be assigned to multiple bookings.
+- Attendees can book for other people, while the same account can include itself
+  only once per event.
+- Full or partial booking cancellation by selecting named seats; only cancelled
+  seats return to event availability.
+- Creator booking view with one row per attendee seat and an Excel export that
+  lists seats individually.
 - OpenAPI documentation and a Python SDK generated from the API schema.
 
 ## Requirements
@@ -80,6 +87,30 @@ Open <http://127.0.0.1:5173>. The frontend's default API URL is
 `http://127.0.0.1:8000`. If the API runs elsewhere, set
 `VITE_API_BASE_URL` in `frontend/.env` to the API origin (not the `/docs` URL).
 Ensure the backend `CORS_ORIGINS` setting includes the frontend origin.
+
+## Create and manage events
+
+Register an account with the **Creator** role, sign in, and open the creator
+dashboard. Choose **Create event** and enter the event name, description,
+date/time, seat capacity, and (optionally) the venue name and full address.
+After publishing, the event appears in public discovery. Attendees can view its
+address on the event card and event detail page before booking.
+
+Creators can edit their own events from the dashboard, including updating or
+clearing the address. The dashboard also provides a per-seat booking list and
+an Excel download with one attendee and seat number per row.
+
+Attendees register with the **Attendee** role. During booking, they can enter a
+name for each seat and choose whether one seat is for themselves. An attendee
+can book seats for other people at the same event, but cannot include their own
+account in more than one booking for that event. From **My bookings**, they can
+cancel selected seats; released seats become available again.
+
+The API also supports creator event management at `/events/` and
+`/creator/events`, event details at `/events/{event_id}`, and creator-only
+attendee bookings at `/creator/events/{event_id}/bookings`. See the interactive
+API docs at <http://127.0.0.1:8000/docs> while the backend is running for the
+complete endpoint list and request fields.
 
 ## Run tests
 

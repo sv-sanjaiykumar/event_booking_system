@@ -31,24 +31,43 @@ function numberCell(reference, value, style = "") {
 }
 
 function worksheetXml(event, bookings) {
-  const attendeeRows = bookings.map((booking, index) => {
+  let nextSeatNumber = 1;
+  const seats = bookings.flatMap((booking) => {
+    const quantity = booking.quantity ?? 1;
+    const attendeeNames =
+      booking.attendee_names?.length === quantity
+        ? booking.attendee_names
+        : Array(quantity).fill(booking.user_name);
+    const assignedSeatNumbers =
+      booking.seat_numbers?.length === quantity
+        ? booking.seat_numbers
+        : Array.from({ length: quantity }, (_, index) => nextSeatNumber + index);
+    nextSeatNumber = Math.max(nextSeatNumber, ...assignedSeatNumbers) + 1;
+
+    return attendeeNames.map((attendeeName, seatIndex) => ({
+      booking,
+      seatNumber: assignedSeatNumbers[seatIndex],
+      attendeeName,
+    }));
+  }).sort((first, second) => first.seatNumber - second.seatNumber);
+  const attendeeRows = seats.map(({ booking, seatNumber, attendeeName }, index) => {
     const rowNumber = index + 5;
-    return `<row r="${rowNumber}">${inlineStringCell(`A${rowNumber}`, booking.user_name)}${numberCell(`B${rowNumber}`, booking.id)}${numberCell(`C${rowNumber}`, booking.quantity ?? 1)}${numberCell(`D${rowNumber}`, excelDate(booking.booking_date), ' s="1"')}</row>`;
+    return `<row r="${rowNumber}">${inlineStringCell(`A${rowNumber}`, booking.user_name)}${numberCell(`B${rowNumber}`, booking.id)}${inlineStringCell(`C${rowNumber}`, `Seat ${seatNumber}`)}${inlineStringCell(`D${rowNumber}`, attendeeName)}${numberCell(`E${rowNumber}`, excelDate(booking.booking_date), ' s="1"')}</row>`;
   });
-  const lastRow = Math.max(4, bookings.length + 4);
+  const lastRow = Math.max(4, seats.length + 4);
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <dimension ref="A1:D${lastRow}"/>
+  <dimension ref="A1:E${lastRow}"/>
   <sheetViews><sheetView workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
-  <cols><col min="1" max="1" width="32" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/><col min="3" max="3" width="14" customWidth="1"/><col min="4" max="4" width="26" customWidth="1"/></cols>
+  <cols><col min="1" max="1" width="32" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/><col min="3" max="3" width="16" customWidth="1"/><col min="4" max="4" width="32" customWidth="1"/><col min="5" max="5" width="26" customWidth="1"/></cols>
   <sheetData>
     <row r="1">${inlineStringCell("A1", "Event")}${inlineStringCell("B1", event.name)}</row>
     <row r="2">${inlineStringCell("A2", "Event date (UTC)")}${numberCell("B2", excelDate(event.date), ' s="1"')}</row>
-    <row r="4">${inlineStringCell("A4", "Attendee name", ' s="2"')}${inlineStringCell("B4", "Booking ID", ' s="2"')}${inlineStringCell("C4", "Seats", ' s="2"')}${inlineStringCell("D4", "Booking date (UTC)", ' s="2"')}</row>
+    <row r="4">${inlineStringCell("A4", "Booked by", ' s="2"')}${inlineStringCell("B4", "Booking ID", ' s="2"')}${inlineStringCell("C4", "Seat", ' s="2"')}${inlineStringCell("D4", "Attendee name", ' s="2"')}${inlineStringCell("E4", "Booking date (UTC)", ' s="2"')}</row>
     ${attendeeRows.join("\n    ")}
   </sheetData>
-  <autoFilter ref="A4:D${lastRow}"/>
+  <autoFilter ref="A4:E${lastRow}"/>
 </worksheet>`;
 }
 
