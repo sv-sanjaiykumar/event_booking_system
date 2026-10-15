@@ -16,6 +16,7 @@ from app.services import booking_service, event_service
 from app.services.exceptions import (
     BookingNotFoundError,
     EventSoldOutError,
+    InvalidCancellationQuantityError,
 )
 
 
@@ -64,15 +65,15 @@ def test_booking_rejects_over_capacity_without_consuming_a_seat(
         assert event.available_seats == 0
 
 
-def test_canceling_booking_releases_one_seat_only(test_session_factory):
+def test_canceling_booking_releases_all_reserved_seats(test_session_factory):
     with test_session_factory() as db:
         creator = create_account(db, "creator")
         attendee = create_account(db, "attendee")
         event = event_service.create_event(
-            db, future_event_data("Cancelable event", 1), creator.id
+            db, future_event_data("Cancelable event", 5), creator.id
         )
         booking = booking_service.book_event(
-            db, event.id, attendee.id, attendee.name
+            db, event.id, attendee.id, attendee.name, quantity=3
         )
         event_id = event.id
         booking_id = booking.id
@@ -87,7 +88,85 @@ def test_canceling_booking_releases_one_seat_only(test_session_factory):
 
     with test_session_factory() as db:
         event = event_service.get_event(db, event_id)
-        assert event.available_seats == 1
+        assert event.available_seats == 5
+
+
+def test_partial_booking_cancellation_keeps_remaining_seats_reserved(
+    test_session_factory,
+):
+    with test_session_factory() as db:
+        creator = create_account(db, "creator")
+        attendee = create_account(db, "attendee")
+        event = event_service.create_event(
+            db, future_event_data("Partially cancelable event", 5), creator.id
+        )
+        booking = booking_service.book_event(
+            db, event.id, attendee.id, attendee.name, quantity=4
+        )
+        event_id = event.id
+        booking_id = booking.id
+        attendee_id = attendee.id
+
+    with test_session_factory() as db:
+        booking_service.cancel_booking(db, booking_id, attendee_id, quantity=2)
+
+    with test_session_factory() as db:
+        event = event_service.get_event(db, event_id)
+        remaining_booking = booking_service.get_user_booking(
+            db, booking_id, attendee_id
+        )[0]
+        assert event.available_seats == 3
+        assert remaining_booking.quantity == 2
+
+        booking_service.cancel_booking(db, booking_id, attendee_id, quantity=2)
+        assert event.available_seats == 5
+
+    with test_session_factory() as db:
+        with pytest.raises(BookingNotFoundError):
+            booking_service.get_user_booking(db, booking_id, attendee_id)
+
+
+def test_cannot_cancel_more_seats_than_booking_quantity(test_session_factory):
+    with test_session_factory() as db:
+        creator = create_account(db, "creator")
+        attendee = create_account(db, "attendee")
+        event = event_service.create_event(
+            db, future_event_data("Cancellation quantity event", 5), creator.id
+        )
+        booking = booking_service.book_event(
+            db, event.id, attendee.id, attendee.name, quantity=2
+        )
+        event_id = event.id
+        booking_id = booking.id
+        attendee_id = attendee.id
+
+    with test_session_factory() as db:
+        with pytest.raises(InvalidCancellationQuantityError):
+            booking_service.cancel_booking(db, booking_id, attendee_id, quantity=3)
+
+    with test_session_factory() as db:
+        event = event_service.get_event(db, event_id)
+        remaining_booking = booking_service.get_user_booking(
+            db, booking_id, attendee_id
+        )[0]
+        assert event.available_seats == 3
+        assert remaining_booking.quantity == 2
+
+
+def test_booking_quantity_is_reserved_and_recorded(test_session_factory):
+    with test_session_factory() as db:
+        creator = create_account(db, "creator")
+        attendee = create_account(db, "attendee")
+        event = event_service.create_event(
+            db, future_event_data("Multi seat event", 5), creator.id
+        )
+
+        booking = booking_service.book_event(
+            db, event.id, attendee.id, attendee.name, quantity=3
+        )
+
+        assert booking.quantity == 3
+        assert event.available_seats == 2
 
 
 def test_concurrent_bookings_cannot_reserve_the_same_last_seat(tmp_path):

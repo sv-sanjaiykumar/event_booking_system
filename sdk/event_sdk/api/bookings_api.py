@@ -15,8 +15,10 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
-from pydantic import StrictInt
-from typing import List
+from pydantic import Field, StrictInt
+from typing import List, Optional
+from typing_extensions import Annotated
+from event_sdk.models.booking_create import BookingCreate
 from event_sdk.models.booking_response import BookingResponse
 from event_sdk.models.my_booking_response import MyBookingResponse
 
@@ -42,6 +44,7 @@ class BookingsApi:
     def book_event_events_event_id_book_post(
         self,
         event_id: StrictInt,
+        booking_create: Optional[BookingCreate] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -60,6 +63,8 @@ class BookingsApi:
 
         :param event_id: (required)
         :type event_id: int
+        :param booking_create:
+        :type booking_create: BookingCreate
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -84,6 +89,7 @@ class BookingsApi:
 
         _param = self._book_event_events_event_id_book_post_serialize(
             event_id=event_id,
+            booking_create=booking_create,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -109,6 +115,7 @@ class BookingsApi:
     def book_event_events_event_id_book_post_with_http_info(
         self,
         event_id: StrictInt,
+        booking_create: Optional[BookingCreate] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -127,6 +134,8 @@ class BookingsApi:
 
         :param event_id: (required)
         :type event_id: int
+        :param booking_create:
+        :type booking_create: BookingCreate
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -151,6 +160,7 @@ class BookingsApi:
 
         _param = self._book_event_events_event_id_book_post_serialize(
             event_id=event_id,
+            booking_create=booking_create,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -176,6 +186,7 @@ class BookingsApi:
     def book_event_events_event_id_book_post_without_preload_content(
         self,
         event_id: StrictInt,
+        booking_create: Optional[BookingCreate] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -194,6 +205,8 @@ class BookingsApi:
 
         :param event_id: (required)
         :type event_id: int
+        :param booking_create:
+        :type booking_create: BookingCreate
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -218,6 +231,7 @@ class BookingsApi:
 
         _param = self._book_event_events_event_id_book_post_serialize(
             event_id=event_id,
+            booking_create=booking_create,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -238,6 +252,7 @@ class BookingsApi:
     def _book_event_events_event_id_book_post_serialize(
         self,
         event_id,
+        booking_create,
         _request_auth,
         _content_type,
         _headers,
@@ -265,6 +280,8 @@ class BookingsApi:
         # process the header parameters
         # process the form parameters
         # process the body parameter
+        if booking_create is not None:
+            _body_params = booking_create
 
 
         # set the HTTP header `Accept`
@@ -275,6 +292,19 @@ class BookingsApi:
                 ]
             )
 
+        # set the HTTP header `Content-Type`
+        if _content_type:
+            _header_params['Content-Type'] = _content_type
+        else:
+            _default_content_type = (
+                self.api_client.select_header_content_type(
+                    [
+                        'application/json'
+                    ]
+                )
+            )
+            if _default_content_type is not None:
+                _header_params['Content-Type'] = _default_content_type
 
         # authentication setting
         _auth_settings: List[str] = [
@@ -303,6 +333,7 @@ class BookingsApi:
     def cancel_booking_bookings_booking_id_delete(
         self,
         booking_id: StrictInt,
+        quantity: Optional[Annotated[int, Field(strict=True, ge=1)]] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -321,6 +352,8 @@ class BookingsApi:
 
         :param booking_id: (required)
         :type booking_id: int
+        :param quantity:
+        :type quantity: int
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -345,6 +378,7 @@ class BookingsApi:
 
         _param = self._cancel_booking_bookings_booking_id_delete_serialize(
             booking_id=booking_id,
+            quantity=quantity,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -370,6 +404,7 @@ class BookingsApi:
     def cancel_booking_bookings_booking_id_delete_with_http_info(
         self,
         booking_id: StrictInt,
+        quantity: Optional[Annotated[int, Field(strict=True, ge=1)]] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -388,6 +423,8 @@ class BookingsApi:
 
         :param booking_id: (required)
         :type booking_id: int
+        :param quantity:
+        :type quantity: int
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -412,6 +449,7 @@ class BookingsApi:
 
         _param = self._cancel_booking_bookings_booking_id_delete_serialize(
             booking_id=booking_id,
+            quantity=quantity,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -437,6 +475,7 @@ class BookingsApi:
     def cancel_booking_bookings_booking_id_delete_without_preload_content(
         self,
         booking_id: StrictInt,
+        quantity: Optional[Annotated[int, Field(strict=True, ge=1)]] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -455,6 +494,8 @@ class BookingsApi:
 
         :param booking_id: (required)
         :type booking_id: int
+        :param quantity:
+        :type quantity: int
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -479,6 +520,7 @@ class BookingsApi:
 
         _param = self._cancel_booking_bookings_booking_id_delete_serialize(
             booking_id=booking_id,
+            quantity=quantity,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -499,6 +541,7 @@ class BookingsApi:
     def _cancel_booking_bookings_booking_id_delete_serialize(
         self,
         booking_id,
+        quantity,
         _request_auth,
         _content_type,
         _headers,
@@ -523,6 +566,9 @@ class BookingsApi:
         if booking_id is not None:
             _path_params['booking_id'] = booking_id
         # process the query parameters
+        if quantity is not None:
+            _query_params.append(('quantity', quantity))
+
         # process the header parameters
         # process the form parameters
         # process the body parameter
@@ -1060,5 +1106,4 @@ class BookingsApi:
             _host=_host,
             _request_auth=_request_auth
         )
-
 

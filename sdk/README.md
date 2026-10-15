@@ -117,6 +117,7 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [BookingCreate](docs/BookingCreate.md)
  - [BookingResponse](docs/BookingResponse.md)
  - [CreatorBookingResponse](docs/CreatorBookingResponse.md)
  - [EventCreate](docs/EventCreate.md)

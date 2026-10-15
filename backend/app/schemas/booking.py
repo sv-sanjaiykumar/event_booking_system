@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class BookingCreate(BaseModel):
-    user_name: str = Field(min_length=1, max_length=200)
+    quantity: int = Field(default=1, ge=1)
 
 
 class BookingResponse(BaseModel):
@@ -13,6 +13,7 @@ class BookingResponse(BaseModel):
     id: int
     event_id: int
     user_name: str
+    quantity: int
     booking_date: datetime
 
     @field_validator("booking_date", mode="before")
@@ -35,6 +36,7 @@ class CreatorBookingResponse(BaseModel):
     id: int
     event_id: int
     user_name: str
+    quantity: int
     booking_date: datetime
 
     @field_validator("booking_date", mode="before")

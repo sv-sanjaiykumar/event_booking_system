@@ -85,7 +85,7 @@ def test_auth_migration_preserves_historical_records_without_fake_owners(
             "date, creator_id, status FROM events WHERE id = 4"
         ).fetchone()
         booking = connection.execute(
-            "SELECT id, event_id, user_name, booking_date, user_id "
+            "SELECT id, event_id, user_name, booking_date, user_id, quantity "
             "FROM bookings WHERE id = 7"
         ).fetchone()
         version = connection.execute(
@@ -123,12 +123,13 @@ def test_auth_migration_preserves_historical_records_without_fake_owners(
         "Historical attendee",
         "2026-10-13 12:45:00",
         None,
+        1,
     )
     assert tuple(existing_account) == (12, "account@example.com")
     assert tuple(existing_session) == (3, 12, "existing-session-id")
     assert "ix_users_email" in user_indexes
     assert "uq_events_published_name_date" in event_indexes
-    assert version == "20261014_03"
+    assert version == "20261015_04"
     assert foreign_key_violations == []
 
 
@@ -153,4 +154,4 @@ def test_auth_migration_initializes_a_blank_database(tmp_path, monkeypatch):
 
     assert {"users", "auth_sessions", "events", "bookings"} <= tables
     assert {"creator_id", "status"} <= event_columns
-    assert {"user_id"} <= booking_columns
+    assert {"user_id", "quantity"} <= booking_columns

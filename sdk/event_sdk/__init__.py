@@ -30,6 +30,7 @@ __all__ = [
     "ApiKeyError",
     "ApiAttributeError",
     "ApiException",
+    "BookingCreate",
     "BookingResponse",
     "CreatorBookingResponse",
     "EventCreate",
@@ -63,6 +64,7 @@ from event_sdk.exceptions import ApiAttributeError as ApiAttributeError
 from event_sdk.exceptions import ApiException as ApiException
 
 # import models into sdk package
+from event_sdk.models.booking_create import BookingCreate as BookingCreate
 from event_sdk.models.booking_response import BookingResponse as BookingResponse
 from event_sdk.models.creator_booking_response import CreatorBookingResponse as CreatorBookingResponse
 from event_sdk.models.event_create import EventCreate as EventCreate

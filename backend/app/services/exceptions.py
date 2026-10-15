@@ -6,7 +6,15 @@ class EventSoldOutError(Exception):
     pass
 
 
+class InsufficientSeatsError(Exception):
+    pass
+
+
 class BookingNotFoundError(Exception):
+    pass
+
+
+class InvalidCancellationQuantityError(Exception):
     pass
 
 

@@ -31,8 +31,9 @@ class CreatorBookingResponse(BaseModel):
     id: StrictInt
     event_id: StrictInt
     user_name: StrictStr
+    quantity: StrictInt
     booking_date: datetime
-    __properties: ClassVar[List[str]] = ["id", "event_id", "user_name", "booking_date"]
+    __properties: ClassVar[List[str]] = ["id", "event_id", "user_name", "quantity", "booking_date"]
 
     model_config = ConfigDict(
         validate_by_name=True,
@@ -88,6 +89,7 @@ class CreatorBookingResponse(BaseModel):
             "id": obj.get("id"),
             "event_id": obj.get("event_id"),
             "user_name": obj.get("user_name"),
+            "quantity": obj.get("quantity"),
             "booking_date": obj.get("booking_date")
         })
         return _obj

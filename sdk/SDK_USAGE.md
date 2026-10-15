@@ -90,6 +90,40 @@ Use credentials from a local test account and do not hard-code real passwords
 or access tokens. Generated methods and model fields reflect the OpenAPI
 document at generation time; regenerate after API contract changes.
 
+To reserve multiple seats, create a `BookingCreate` request. The API checks
+that the requested quantity is between one and the event's current available
+seat count:
+
+```python
+from event_sdk import ApiClient, BookingCreate, Configuration
+from event_sdk.api.bookings_api import BookingsApi
+
+configuration = Configuration(
+    host="http://127.0.0.1:8000",
+    access_token="YOUR_ATTENDEE_ACCESS_TOKEN",
+)
+with ApiClient(configuration) as client:
+    bookings_api = BookingsApi(client)
+    booking = bookings_api.book_event_events_event_id_book_post(
+        event_id=1,
+        booking_create=BookingCreate(quantity=2),
+    )
+    print(booking.quantity)
+```
+
+To cancel only some of a multi-seat booking, pass the number of seats to
+release. The booking remains active with its reduced quantity; omitting
+`quantity` cancels all seats still on the booking:
+
+```python
+with ApiClient(configuration) as client:
+    bookings_api = BookingsApi(client)
+    bookings_api.cancel_booking_bookings_booking_id_delete(
+        booking_id=1,
+        quantity=1,
+    )
+```
+
 ## Tests
 
 Install the generated development dependencies and run its generated tests:

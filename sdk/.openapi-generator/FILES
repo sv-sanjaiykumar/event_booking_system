@@ -4,6 +4,7 @@
 .travis.yml
 README.md
 docs/AuthenticationApi.md
+docs/BookingCreate.md
 docs/BookingResponse.md
 docs/BookingsApi.md
 docs/CreatorBookingResponse.md
@@ -30,6 +31,7 @@ event_sdk/api_response.py
 event_sdk/configuration.py
 event_sdk/exceptions.py
 event_sdk/models/__init__.py
+event_sdk/models/booking_create.py
 event_sdk/models/booking_response.py
 event_sdk/models/creator_booking_response.py
 event_sdk/models/event_create.py

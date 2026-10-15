@@ -328,3 +328,27 @@ def test_event_edit_capacity_and_cancellation_policy(client):
     assert public_cancelled_event.status_code == 404
     assert booking_cancel_after_event_cancel.status_code == 409
     assert len(retained_bookings.json()) == 2
+
+
+def test_event_capacity_cannot_be_reduced_below_reserved_seat_quantity(client):
+    _creator, creator_headers = register_and_login(
+        client, "creator", "quantitycapacity@example.com"
+    )
+    _attendee, attendee_headers = register_and_login(
+        client, "attendee", "quantitycapacityattendee@example.com"
+    )
+    event = create_event(client, creator_headers, seats=5)
+    booking = client.post(
+        f"/events/{event['id']}/book",
+        headers=attendee_headers,
+        json={"quantity": 4},
+    )
+    update = client.patch(
+        f"/events/{event['id']}",
+        headers=creator_headers,
+        json={"total_seats": 3},
+    )
+
+    assert booking.status_code == 201
+    assert booking.json()["quantity"] == 4
+    assert update.status_code == 409

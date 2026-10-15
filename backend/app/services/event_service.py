@@ -100,10 +100,10 @@ def update_owned_event(
     if normalized_date is not None and normalized_date <= _now_utc_naive():
         raise EventAlreadyStartedError
     if "total_seats" in values:
-        booked_count = event_repository.count_event_bookings(db, event_id)
-        if values["total_seats"] < booked_count:
+        booked_seats = event_repository.count_booked_seats(db, event_id)
+        if values["total_seats"] < booked_seats:
             raise CapacityBelowBookingsError
-        values["available_seats"] = values["total_seats"] - booked_count
+        values["available_seats"] = values["total_seats"] - booked_seats
     try:
         if event_repository.published_event_exists_at_date(
             db,

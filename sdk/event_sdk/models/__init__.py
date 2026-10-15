@@ -13,6 +13,7 @@
 """  # noqa: E501
 
 # import models into model package
+from event_sdk.models.booking_create import BookingCreate
 from event_sdk.models.booking_response import BookingResponse
 from event_sdk.models.creator_booking_response import CreatorBookingResponse
 from event_sdk.models.event_create import EventCreate

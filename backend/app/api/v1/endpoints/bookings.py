@@ -1,11 +1,11 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user, get_db, require_attendee
 from app.models.user import User
-from app.schemas.booking import BookingResponse, MyBookingResponse
+from app.schemas.booking import BookingCreate, BookingResponse, MyBookingResponse
 from app.services import booking_service
 from app.services.exceptions import (
     BookingNotFoundError,
@@ -13,6 +13,8 @@ from app.services.exceptions import (
     EventCancelledError,
     EventNotFoundError,
     EventSoldOutError,
+    InsufficientSeatsError,
+    InvalidCancellationQuantityError,
 )
 
 router = APIRouter(tags=["bookings"])
@@ -30,10 +32,11 @@ def book_event(
     event_id: int,
     db: DbSession,
     attendee: AttendeeAccount,
+    booking_data: BookingCreate = Body(default=BookingCreate()),
 ) -> BookingResponse:
     try:
         return booking_service.book_event(
-            db, event_id, attendee.id, attendee.name
+            db, event_id, attendee.id, attendee.name, booking_data.quantity
         )
     except EventNotFoundError as exc:
         raise HTTPException(
@@ -44,6 +47,11 @@ def book_event(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Event is fully booked.",
+        ) from exc
+    except InsufficientSeatsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Not enough seats remain for this booking.",
         ) from exc
     except EventCancelledError as exc:
         raise HTTPException(
@@ -68,6 +76,7 @@ def list_my_bookings(
             id=booking.id,
             event_id=booking.event_id,
             user_name=booking.user_name,
+            quantity=booking.quantity,
             booking_date=booking.booking_date,
             event_name=event.name,
             event_date=event.date,
@@ -103,13 +112,19 @@ def cancel_booking(
     booking_id: int,
     db: DbSession,
     attendee: AttendeeAccount,
+    quantity: Annotated[Optional[int], Query(ge=1)] = None,
 ) -> Response:
     try:
-        booking_service.cancel_booking(db, booking_id, attendee.id)
+        booking_service.cancel_booking(db, booking_id, attendee.id, quantity)
     except BookingNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Booking not found.",
+        ) from exc
+    except InvalidCancellationQuantityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The cancellation quantity exceeds the seats remaining on this booking.",
         ) from exc
     except EventAlreadyStartedError as exc:
         raise HTTPException(

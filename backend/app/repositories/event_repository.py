@@ -91,10 +91,12 @@ def list_owned_events(
     )
 
 
-def count_event_bookings(db: Session, event_id: int) -> int:
+def count_booked_seats(db: Session, event_id: int) -> int:
     return int(
         db.scalar(
-            select(func.count(Booking.id)).where(Booking.event_id == event_id)
+            select(func.coalesce(func.sum(Booking.quantity), 0)).where(
+                Booking.event_id == event_id
+            )
         )
         or 0
     )

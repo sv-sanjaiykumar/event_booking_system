@@ -179,6 +179,125 @@ def test_booking_capacity_and_owner_cancellation(client):
     assert client.get(f"/events/{event['id']}").json()["available_seats"] == 0
 
 
+def test_booking_quantity_updates_and_restores_available_seats(client):
+    _creator, creator_headers = register_user(client)
+    event = create_event(client, creator_headers, capacity=5)
+    _attendee, attendee_headers = register_user(
+        client, role="attendee", email="quantity-attendee@example.com"
+    )
+
+    first_booking = client.post(
+        f"/events/{event['id']}/book",
+        headers=attendee_headers,
+        json={"quantity": 3},
+    )
+    remaining_seats = client.get(f"/events/{event['id']}").json()["available_seats"]
+    too_many_seats = client.post(
+        f"/events/{event['id']}/book",
+        headers=attendee_headers,
+        json={"quantity": 3},
+    )
+    second_booking = client.post(
+        f"/events/{event['id']}/book",
+        headers=attendee_headers,
+        json={"quantity": 2},
+    )
+    full_capacity = client.get(f"/events/{event['id']}")
+    cancellation = client.delete(
+        f"/bookings/{first_booking.json()['id']}",
+        headers=attendee_headers,
+    )
+
+    assert first_booking.status_code == 201
+    assert first_booking.json()["quantity"] == 3
+    assert remaining_seats == 2
+    assert too_many_seats.status_code == 409
+    assert second_booking.status_code == 201
+    assert second_booking.json()["quantity"] == 2
+    assert full_capacity.json()["available_seats"] == 0
+    assert cancellation.status_code == 204
+    assert client.get(f"/events/{event['id']}").json()["available_seats"] == 3
+    assert client.get("/bookings/me", headers=attendee_headers).json()[0][
+        "quantity"
+    ] == 2
+
+
+def test_booking_quantity_must_be_positive(client):
+    _creator, creator_headers = register_user(client)
+    event = create_event(client, creator_headers, capacity=5)
+    _attendee, attendee_headers = register_user(
+        client, role="attendee", email="invalid-quantity@example.com"
+    )
+
+    response = client.post(
+        f"/events/{event['id']}/book",
+        headers=attendee_headers,
+        json={"quantity": 0},
+    )
+
+    assert response.status_code == 422
+    assert client.get(f"/events/{event['id']}").json()["available_seats"] == 5
+
+
+def test_partial_cancellation_only_releases_requested_seats(client):
+    _creator, creator_headers = register_user(client)
+    event = create_event(client, creator_headers, capacity=5)
+    _attendee, attendee_headers = register_user(
+        client, role="attendee", email="partial-cancel@example.com"
+    )
+    booking = client.post(
+        f"/events/{event['id']}/book",
+        headers=attendee_headers,
+        json={"quantity": 4},
+    )
+    booking_id = booking.json()["id"]
+
+    partial_cancellation = client.delete(
+        f"/bookings/{booking_id}?quantity=2", headers=attendee_headers
+    )
+    remaining_booking = client.get(
+        "/bookings/me", headers=attendee_headers
+    ).json()[0]
+    remaining_seats = client.get(f"/events/{event['id']}").json()["available_seats"]
+    excessive_cancellation = client.delete(
+        f"/bookings/{booking_id}?quantity=3", headers=attendee_headers
+    )
+    full_cancellation = client.delete(
+        f"/bookings/{booking_id}?quantity=2", headers=attendee_headers
+    )
+
+    assert partial_cancellation.status_code == 204
+    assert remaining_booking["quantity"] == 2
+    assert remaining_seats == 3
+    assert excessive_cancellation.status_code == 409
+    assert full_cancellation.status_code == 204
+    assert client.get(f"/events/{event['id']}").json()["available_seats"] == 5
+    assert client.get("/bookings/me", headers=attendee_headers).json() == []
+
+
+def test_cancellation_quantity_must_be_positive(client):
+    _creator, creator_headers = register_user(client)
+    event = create_event(client, creator_headers, capacity=3)
+    _attendee, attendee_headers = register_user(
+        client, role="attendee", email="zero-cancel@example.com"
+    )
+    booking = client.post(
+        f"/events/{event['id']}/book",
+        headers=attendee_headers,
+        json={"quantity": 2},
+    ).json()
+
+    response = client.delete(
+        f"/bookings/{booking['id']}?quantity=0", headers=attendee_headers
+    )
+
+    assert response.status_code == 422
+    assert client.get(f"/events/{event['id']}").json()["available_seats"] == 1
+    assert client.get("/bookings/me", headers=attendee_headers).json()[0][
+        "quantity"
+    ] == 2
+
+
 def test_booking_unknown_event_returns_404(client):
     _user, headers = register_user(client, role="attendee")
     response = client.post("/events/999/book", headers=headers)

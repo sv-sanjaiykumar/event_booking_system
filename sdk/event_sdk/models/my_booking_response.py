@@ -31,11 +31,12 @@ class MyBookingResponse(BaseModel):
     id: StrictInt
     event_id: StrictInt
     user_name: StrictStr
+    quantity: StrictInt
     booking_date: datetime
     event_name: StrictStr
     event_date: datetime
     event_status: StrictStr
-    __properties: ClassVar[List[str]] = ["id", "event_id", "user_name", "booking_date", "event_name", "event_date", "event_status"]
+    __properties: ClassVar[List[str]] = ["id", "event_id", "user_name", "quantity", "booking_date", "event_name", "event_date", "event_status"]
 
     model_config = ConfigDict(
         validate_by_name=True,
@@ -91,6 +92,7 @@ class MyBookingResponse(BaseModel):
             "id": obj.get("id"),
             "event_id": obj.get("event_id"),
             "user_name": obj.get("user_name"),
+            "quantity": obj.get("quantity"),
             "booking_date": obj.get("booking_date"),
             "event_name": obj.get("event_name"),
             "event_date": obj.get("event_date"),

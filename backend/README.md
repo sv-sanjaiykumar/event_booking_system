@@ -57,10 +57,10 @@ FastAPI serves Swagger UI at <http://127.0.0.1:8000/docs>, ReDoc at <http://127.
 | `DELETE` | `/events/{event_id}` | Creator-owner-only cancellation. The event is marked cancelled; its bookings are retained. |
 | `GET` | `/creator/events` | List events owned by the authenticated creator. |
 | `GET` | `/creator/events/{event_id}/bookings` | List bookings for an event owned by the authenticated creator. |
-| `POST` | `/events/{event_id}/book` | Attendee-only booking. The attendee name and owner ID are derived from the token, never trusted from the request body. |
+| `POST` | `/events/{event_id}/book` | Attendee-only booking. Accepts `{"quantity": 1}` to reserve between one and the remaining available seats. The attendee name and owner ID are derived from the token, never trusted from the request body. |
 | `GET` | `/bookings/me` | List bookings belonging to the authenticated attendee. |
 | `GET` | `/bookings/{booking_id}` | Read a booking if it belongs to the attendee or to an event owned by the creator. |
-| `DELETE` | `/bookings/{booking_id}` | Attendee-owner-only cancellation before the event starts; restores one seat. |
+| `DELETE` | `/bookings/{booking_id}?quantity=2` | Attendee-owner-only cancellation before the event starts. Restores only the requested number of seats and retains any remaining seats on the booking. Omit `quantity` to cancel the full booking. |
 
 Protected routes require `Authorization: Bearer <access_token>`. The only accepted roles are `attendee` and `creator`; the API returns `403` for the wrong role and uses `404` for resources outside the authenticated user's ownership. Signup passwords require at least 12 characters and characters from at least three of lowercase, uppercase, digits, and symbols. Passwords are stored using Argon2id.
 
@@ -68,7 +68,7 @@ Each issued token has a persisted session ID. The API verifies its signature, is
 
 The frontend keeps only the short-lived access token in tab-scoped `sessionStorage` so a page refresh can restore the session by validating `/auth/me`. It does not persist tokens in `localStorage`; logout, expiry, and invalid-session responses clear the tab token. Deploy with a strong per-environment secret and HTTPS.
 
-Seat reservation is a conditional database update, followed by the booking insert in the same transaction. Cancellation conditionally deletes the owned booking and restores its seat in the same transaction. Both operations are safe against concurrent requests. SQLite check constraints enforce valid seat counts.
+Seat reservation accepts a quantity from 1 through the event's currently available seats. A conditional database update subtracts the requested quantity only if enough seats remain, followed by the booking insert in the same transaction. Cancellation accepts an optional quantity from 1 through the booking's remaining seats. It restores only those seats and reduces the booking quantity atomically; the booking record is deleted when its remaining quantity reaches zero. Omitting the cancellation quantity preserves the API's previous behavior and cancels all remaining seats. SQLite check constraints enforce valid seat counts and positive booking quantities.
 
 Event timestamps are accepted with a timezone and stored as UTC timestamps in SQLite. The API returns them as UTC. When an API booking is created, the backend captures the application system clock in UTC and stores that booking time; SQLite's `CURRENT_TIMESTAMP` remains a fallback default for direct database inserts.
 
