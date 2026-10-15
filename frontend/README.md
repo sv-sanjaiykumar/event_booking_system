@@ -28,8 +28,9 @@ Open <http://127.0.0.1:5173>. The API base URL defaults to `http://127.0.0.1:800
 - Attendee and creator registration/login, validated using the backend profile endpoint and role.
 - Attendee dashboard with server-loaded booking history and eligible cancellations.
 - Creator dashboard with owned events, capacity/booking summaries, event creation and updates, cancellation, and attendee names/booking references for owned events.
-- Authenticated booking; attendee identity is determined by the backend token, not a submitted name or user ID.
-- In-app cancellation confirmation; booking history is removed from the screen only after the API confirms cancellation.
+- Authenticated booking for a selected quantity of available seats, with a review step and explicit final confirmation before the booking request is sent; attendee identity is determined by the backend token, not a submitted name or user ID.
+- In-app cancellation confirmation; booking history is updated only after the API confirms cancellation.
+- Attendees can cancel a chosen number of seats from a multi-seat booking; only cancelled seats return to event availability, while the rest of the booking remains active.
 - Refresh availability automatically every 15 seconds while the page is visible, when the tab becomes active, and manually with the refresh button.
 - Layout adapts to mobile, tablet, and desktop and supports keyboard focus and reduced-motion preferences.
 
@@ -39,7 +40,7 @@ The frontend uses the backend's bearer-token contract. The short-lived access to
 
 The root route `/` redirects to event discovery at `/events`. Public event routes are `/events` and `/events/:eventId`; authentication routes are `/login` and `/register`. Protected routes include `/attendee/dashboard`, `/creator/dashboard`, and the creator-only `/creator/events/new` event creation page. API role and ownership checks remain authoritative; hiding UI controls does not grant access.
 
-Registration accepts attendee or creator roles, matching backend validation. Passwords must be at least 12 characters with at least three of lowercase, uppercase, digits, and symbols. Event booking does not accept an attendee name or quantity: the backend associates one seat with the authenticated attendee. Event dates entered by creators are converted from local browser time to an ISO timestamp with a UTC offset.
+Registration accepts attendee or creator roles, matching backend validation. Passwords must be at least 12 characters with at least three of lowercase, uppercase, digits, and symbols. Event booking sends the selected seat quantity after the attendee explicitly confirms the reviewed event and quantity; the backend associates the booking with the authenticated attendee. Event dates entered by creators are converted from local browser time to an ISO timestamp with a UTC offset.
 
 Creator event names must start with a letter and may contain only letters, numbers, and spaces. The frontend checks this before submission and the backend validates it for all API requests.
 

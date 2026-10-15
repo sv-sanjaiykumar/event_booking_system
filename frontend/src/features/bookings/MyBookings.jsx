@@ -50,6 +50,9 @@ export default function MyBookings({
                       : "Confirmed"}
                 </small>
                 <small>
+                  {booking.quantity ?? 1} {(booking.quantity ?? 1) === 1 ? "seat" : "seats"} booked
+                </small>
+                <small>
                   Booked {new Date(booking.booking_date).toLocaleString()}
                 </small>
               </div>

@@ -9,13 +9,15 @@ export async function fetchEvent(eventId) {
   return data;
 }
 
-export async function bookEvent(eventId) {
-  const { data } = await apiClient.post(`/events/${eventId}/book`);
+export async function bookEvent(eventId, quantity = 1) {
+  const { data } = await apiClient.post(`/events/${eventId}/book`, { quantity });
   return data;
 }
 
-export async function cancelBooking(bookingId) {
-  await apiClient.delete(`/bookings/${bookingId}`);
+export async function cancelBooking(bookingId, quantity) {
+  await apiClient.delete(`/bookings/${bookingId}`, {
+    params: quantity === undefined ? undefined : { quantity },
+  });
 }
 
 export async function fetchMyBookings() {

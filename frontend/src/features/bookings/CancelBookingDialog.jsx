@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function CancelBookingDialog({
   booking,
@@ -9,6 +9,8 @@ export default function CancelBookingDialog({
 }) {
   const keepButtonRef = useRef(null);
   const onCloseRef = useRef(onClose);
+  const bookedQuantity = booking.quantity ?? 1;
+  const [quantity, setQuantity] = useState("1");
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -24,11 +26,11 @@ export default function CancelBookingDialog({
       }
 
       if (keyboardEvent.key === "Tab") {
-        const buttons = document.querySelectorAll(
-          ".cancel-dialog button:not(:disabled)",
+        const focusableControls = document.querySelectorAll(
+          ".cancel-dialog button:not(:disabled), .cancel-dialog input:not(:disabled)",
         );
-        const firstButton = buttons[0];
-        const lastButton = buttons[buttons.length - 1];
+        const firstButton = focusableControls[0];
+        const lastButton = focusableControls[focusableControls.length - 1];
         if (keyboardEvent.shiftKey && document.activeElement === firstButton) {
           keyboardEvent.preventDefault();
           lastButton?.focus();
@@ -78,9 +80,25 @@ export default function CancelBookingDialog({
         <p className="cancel-dialog__event">{booking.event_name}</p>
         <p className="booking-dialog__date">{booking.event_date_label}</p>
         <p className="cancel-dialog__description" id="cancel-dialog-description">
-          Your booking will be removed and the seat will be available for
-          someone else. You can always make a new plan later.
+          Choose how many of your {bookedQuantity} booked{" "}
+          {bookedQuantity === 1 ? "seat" : "seats"} to cancel. Only the seats you
+          cancel will be released, and any remaining seats stay booked.
         </p>
+        <label className="cancel-dialog__quantity-label" htmlFor="cancel-quantity">
+          Seats to cancel
+        </label>
+        <input
+          id="cancel-quantity"
+          className="cancel-dialog__quantity"
+          type="number"
+          min="1"
+          max={bookedQuantity}
+          step="1"
+          required
+          value={quantity}
+          onChange={(event) => setQuantity(event.target.value)}
+          disabled={isCancelling}
+        />
         {error && (
           <p className="cancel-dialog__error" role="alert">
             {error}
@@ -99,10 +117,17 @@ export default function CancelBookingDialog({
           <button
             className="button button--cancel"
             type="button"
-            disabled={isCancelling}
-            onClick={onConfirm}
+            disabled={
+              isCancelling ||
+              !Number.isInteger(Number(quantity)) ||
+              Number(quantity) < 1 ||
+              Number(quantity) > bookedQuantity
+            }
+            onClick={() => onConfirm(Number(quantity))}
           >
-            {isCancelling ? "Cancelling…" : "Yes, cancel booking"}
+            {isCancelling
+              ? "Cancelling…"
+              : `Cancel ${quantity} ${Number(quantity) === 1 ? "seat" : "seats"}`}
           </button>
         </div>
       </section>

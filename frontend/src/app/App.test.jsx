@@ -39,6 +39,7 @@ const booking = {
   id: 24,
   event_id: 1,
   user_name: "Alex Morgan",
+  quantity: 1,
   booking_date: "2026-10-13T12:30:00Z",
   event_name: event.name,
   event_date: event.date,
@@ -58,12 +59,13 @@ describe("public event discovery", () => {
     auth.user = { id: 1, name: "Alex Morgan", role: "attendee" };
     fetchEvents.mockResolvedValue([event]);
     fetchMyBookings.mockResolvedValue([]);
-    bookEvent.mockResolvedValue({
+    bookEvent.mockImplementation(async (_eventId, quantity = 1) => ({
       id: 24,
       event_id: event.id,
       user_name: "Alex Morgan",
+      quantity,
       booking_date: "2026-10-13T12:30:00Z",
-    });
+    }));
     cancelBooking.mockResolvedValue(undefined);
   });
 
@@ -82,12 +84,50 @@ describe("public event discovery", () => {
     expect(
       within(await screen.findByRole("dialog")).getByText("Alex Morgan"),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /confirm booking/i }));
+    fireEvent.click(screen.getByRole("button", { name: /review booking/i }));
+    expect(bookEvent).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Yes, book 1 seat" }));
 
-    expect(await screen.findByText(/booking #24 is confirmed/i)).toBeInTheDocument();
-    expect(bookEvent).toHaveBeenCalledWith(event.id);
+    expect(await screen.findByText(/booking #24 for 1 seat is confirmed/i)).toBeInTheDocument();
+    expect(bookEvent).toHaveBeenCalledWith(event.id, 1);
     expect(fetchMyBookings).toHaveBeenCalled();
     expect(await screen.findByText("2 spots left")).toBeInTheDocument();
+  });
+
+  it("sends the selected number of seats when booking", async () => {
+    fetchEvents
+      .mockResolvedValueOnce([event])
+      .mockResolvedValueOnce([{ ...event, available_seats: 0 }]);
+    renderDiscovery();
+
+    fireEvent.click(await screen.findByRole("button", { name: /book your last spot/i }));
+    const seatQuantity = screen.getByLabelText("Number of seats");
+    expect(seatQuantity).toHaveAttribute("max", "2");
+    fireEvent.change(seatQuantity, {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /review booking/i }));
+    expect(bookEvent).not.toHaveBeenCalled();
+    expect(screen.getByRole("status")).toHaveTextContent("about to book 2 seats");
+    fireEvent.click(screen.getByRole("button", { name: "Yes, book 2 seats" }));
+
+    expect(await screen.findByText(/booking #24 for 2 seats is confirmed/i)).toBeInTheDocument();
+    expect(bookEvent).toHaveBeenCalledWith(event.id, 2);
+    expect(await screen.findByRole("button", { name: "Join next time" })).toBeInTheDocument();
+  });
+
+  it("does not create a booking when the confirmation step is dismissed", async () => {
+    renderDiscovery();
+
+    fireEvent.click(await screen.findByRole("button", { name: /book your last spot/i }));
+    fireEvent.click(screen.getByRole("button", { name: /review booking/i }));
+    expect(screen.getByRole("status")).toHaveTextContent("Your booking will be created only after you confirm");
+    expect(bookEvent).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Close booking dialog" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(bookEvent).not.toHaveBeenCalled();
   });
 
   it("loads bookings from the backend and cancels only after confirmation", async () => {
@@ -103,9 +143,9 @@ describe("public event discovery", () => {
       await screen.findByRole("alertdialog", { name: "Cancel this booking?" }),
     ).toBeInTheDocument();
     expect(cancelBooking).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Yes, cancel booking" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel 1 seat" }));
 
-    expect(cancelBooking).toHaveBeenCalledWith(24);
+    expect(cancelBooking).toHaveBeenCalledWith(24, 1);
     expect(await screen.findByText(/has been cancelled/i)).toBeInTheDocument();
     await waitFor(() => expect(fetchMyBookings).toHaveBeenCalledTimes(2));
     expect(document.querySelector(".booking-list li")).toBeNull();
@@ -133,10 +173,30 @@ describe("public event discovery", () => {
 
     const bookingReference = await screen.findByText(/Booking #24/);
     fireEvent.click(within(bookingReference.closest("li")).getByRole("button", { name: "Cancel" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Yes, cancel booking" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel 1 seat" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Booking not found.");
     expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(screen.getByText(/Booking #24/)).toBeInTheDocument();
+  });
+
+  it("cancels only the selected seats and keeps the rest of the booking", async () => {
+    const multiSeatBooking = { ...booking, quantity: 3 };
+    fetchMyBookings
+      .mockResolvedValueOnce([multiSeatBooking])
+      .mockResolvedValueOnce([{ ...multiSeatBooking, quantity: 1 }]);
+    renderDiscovery();
+
+    const bookingReference = await screen.findByText(/Booking #24/);
+    fireEvent.click(within(bookingReference.closest("li")).getByRole("button", { name: "Cancel" }));
+    const quantityInput = screen.getByRole("spinbutton", { name: "Seats to cancel" });
+    expect(quantityInput).toHaveAttribute("max", "3");
+    fireEvent.change(quantityInput, { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel 2 seats" }));
+
+    expect(cancelBooking).toHaveBeenCalledWith(24, 2);
+    expect(await screen.findByText(/2 seats have been cancelled from booking #24/i)).toBeInTheDocument();
+    expect(await screen.findByText("1 seat booked")).toBeInTheDocument();
     expect(screen.getByText(/Booking #24/)).toBeInTheDocument();
   });
 

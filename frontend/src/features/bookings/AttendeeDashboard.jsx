@@ -34,13 +34,13 @@ export default function AttendeeDashboard() {
     void loadBookings();
   }, [loadBookings]);
 
-  async function handleCancel() {
+  async function handleCancel(quantity) {
     if (!bookingToCancel || cancellingBookingId !== null) return;
     const booking = bookingToCancel;
     setCancellingBookingId(booking.id);
     setCancellationError("");
     try {
-      await cancelBooking(booking.id);
+      await cancelBooking(booking.id, quantity);
       setBookingToCancel(null);
       await loadBookings();
     } catch (requestError) {

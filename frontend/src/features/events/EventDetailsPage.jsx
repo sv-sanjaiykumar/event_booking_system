@@ -35,7 +35,7 @@ export default function EventDetailsPage() {
     void loadEvent();
   }, [eventId]);
 
-  async function confirmBooking() {
+  async function confirmBooking(quantity) {
     if (!event || isBooking) return;
     if (!user) {
       navigate("/login", { state: { from: { pathname: `/events/${eventId}` } } });
@@ -49,9 +49,13 @@ export default function EventDetailsPage() {
     setError("");
     let booking;
     try {
-      booking = await bookEvent(event.id);
+      booking = await bookEvent(event.id, quantity);
       setShowBookingDialog(false);
-      setNotice(`Booking #${booking.id} is confirmed. It’s in My bookings.`);
+      setNotice(
+        `Booking #${booking.id} for ${booking.quantity} ${
+          booking.quantity === 1 ? "seat" : "seats"
+        } is confirmed. It’s in My bookings.`,
+      );
     } catch (requestError) {
       if (requestError?.response?.status === 409) {
         await loadEvent();

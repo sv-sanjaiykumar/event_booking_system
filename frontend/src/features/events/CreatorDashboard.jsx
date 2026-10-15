@@ -278,6 +278,7 @@ export default function CreatorDashboard() {
                           {bookings.map((booking) => (
                             <li key={booking.id}>
                               <span>{booking.user_name}</span>
+                              <span>{booking.quantity ?? 1} {(booking.quantity ?? 1) === 1 ? "seat" : "seats"}</span>
                               <span>Booking #{booking.id}</span>
                               <time dateTime={booking.booking_date}>
                                 {new Date(booking.booking_date).toLocaleString()}
